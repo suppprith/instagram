@@ -141,12 +141,22 @@ test("Instagram's own tab bar is hidden and the username learned from it", async
   const html = `<!doctype html><html><head></head><body>
     <main><a href="/direct/t/1/">thread</a></main>
     <div id="bar" style="position:fixed;bottom:0">
-      <div><a href="/">h</a><a href="/explore/">e</a><a href="/reels/">r</a><a href="/direct/inbox/">d</a><a href="/me.user/">p</a></div>
+      <div><a href="/">h</a><a href="/explore/">e</a><a href="/reels/">r</a><a href="/direct/inbox/">d</a><a href="/me.user/"><img src="https://scontent.cdninstagram.com/me.jpg"></a></div>
     </div></body></html>`;
   const page = boot(t, '/direct/inbox/', { html });
   await wait(250);
   assert.equal(page.w.document.getElementById('bar').getAttribute('data-dms-hidden'), 'tabbar');
   assert.deepEqual(page.of('user').map((m) => m.username), ['me.user']);
+  assert.equal(page.of('user')[0].avatar, 'https://scontent.cdninstagram.com/me.jpg');
+});
+
+test('a cached username still reports the profile photo once found', async (t) => {
+  const html = `<!doctype html><html><head></head><body>
+    <div style="position:fixed;bottom:0"><a href="/explore/">e</a><a href="/reels/">r</a><a href="/me.user/"><img src="https://x.fbcdn.net/me.jpg"></a></div>
+    </body></html>`;
+  const page = boot(t, '/direct/inbox/', { html, before: (w) => w.localStorage.setItem('dms.username', 'me.user') });
+  await wait(250);
+  assert.deepEqual(page.of('user').map((m) => m.avatar), ['https://x.fbcdn.net/me.jpg']);
 });
 
 test('a fixed header with only the logo and inbox link is left alone', async (t) => {
@@ -201,13 +211,14 @@ test('navigate to profile looks the username up when unknown', async (t) => {
   const page = boot(t, '/direct/inbox/', {
     cookie: 'ds_user_id=42',
     before: (w) => {
-      w.fetch = async (url) => ({ ok: url === '/api/v1/users/42/info/', json: async () => ({ user: { username: 'found' } }) });
+      w.fetch = async (url) => ({ ok: url === '/api/v1/users/42/info/', json: async () => ({ user: { username: 'found', profile_pic_url: 'https://x.fbcdn.net/p.jpg' } }) });
     },
   });
   page.send({ type: 'navigate', target: 'profile' });
   await wait(20);
   assert.deepEqual(page.gone, ['/found/']);
   assert.deepEqual(page.of('user').map((m) => m.username), ['found']);
+  assert.equal(page.of('user')[0].avatar, 'https://x.fbcdn.net/p.jpg');
 });
 
 test('badge poll reports the unread count when signed in', async (t) => {

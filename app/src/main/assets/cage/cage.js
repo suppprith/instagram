@@ -43,6 +43,7 @@
   var lastThreadPath = null;
   var readySent = false;
   var username = null;
+  var avatarSent = null;
   var bounceCount = 0;
   var bounceWindowStart = 0;
 
@@ -241,7 +242,7 @@
       for (var depth = 0; el && el !== document.body && depth < 8; depth++, el = el.parentElement) {
         if (el.tagName === 'NAV' || isFixedOrSticky(el)) {
           if (countNavLinks(el) >= 2) {
-            learnUsername(el);
+            learnUser(el);
             if (!el.hasAttribute(HIDDEN_ATTR)) el.setAttribute(HIDDEN_ATTR, 'tabbar');
           }
           break;
@@ -250,23 +251,28 @@
     }
   }
 
-  function learnUsername(container) {
-    if (username) return;
+  /** The profile link in Instagram's tab bar carries the username and the profile photo. */
+  function learnUser(container) {
+    if (username && avatarSent) return;
     var links = container.querySelectorAll('a[href]');
     for (var i = 0; i < links.length; i++) {
       var href = hrefOf(links[i]);
       if (looksLikeProfileHref(href)) {
-        setUsername(href.slice(1, -1));
+        var img = links[i].querySelector('img');
+        setUser(href.slice(1, -1), img ? img.getAttribute('src') : null);
         return;
       }
     }
   }
 
-  function setUsername(name) {
-    if (!name || name === username) return;
+  function setUser(name, avatar) {
+    if (!name) return;
+    var photo = typeof avatar === 'string' && avatar.indexOf('https://') === 0 ? avatar : null;
+    if (name === username && (!photo || photo === avatarSent)) return;
     username = name;
+    if (photo) avatarSent = photo;
     try { localStorage.setItem('dms.username', name); } catch (e) { /* storage may be blocked */ }
-    post({ type: 'user', username: name });
+    post({ type: 'user', username: name, avatar: photo });
   }
 
   function checkReady() {
@@ -402,7 +408,7 @@
       return response.ok ? response.json() : null;
     }).then(function (body) {
       var name = body && body.user && body.user.username;
-      if (name) { setUsername(name); navigateTo('/' + name + '/'); } else navigateTo('/accounts/edit/');
+      if (name) { setUser(name, body.user.profile_pic_url); navigateTo('/' + name + '/'); } else navigateTo('/accounts/edit/');
     }).catch(function () { navigateTo('/accounts/edit/'); });
   }
 
