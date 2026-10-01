@@ -40,9 +40,11 @@ class DebugLog(context: Context) {
         }
     }
 
-    fun clear() = synchronized(lock) {
-        _lines.value = emptyList()
-        runCatching { file.delete() }
+    fun clear() {
+        synchronized(lock) {
+            _lines.value = emptyList()
+            runCatching { file.delete() }
+        }
     }
 
     fun text(): String = _lines.value.joinToString("\n")
