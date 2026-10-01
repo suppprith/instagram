@@ -9,10 +9,12 @@ Konvo: DMs Only
   block rules in app/src/main/assets/cage/rules.json, and the pass policy design
   are adapted from Konvo, licensed under the MIT License.
 
-Feather icons
-  https://github.com/feathericons/feather
-  The settings gear in app/src/main/res/drawable/ic_settings.xml is adapted from
-  Feather, licensed under the MIT License.
+Instagram icons
+  The vector icons in app/src/main/res/drawable (Direct, Notifications heart,
+  account, settings, close, chevron) and the launcher glyph are redrawn after
+  Instagram's own web icons so the native frame matches the page. Instagram and
+  its icons are trademarks of Meta Platforms, Inc. This build is for personal
+  use; replace them before any public release (see docs/roadmap.md, Risks).
 
 MIT License
 

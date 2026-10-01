@@ -66,7 +66,7 @@ System font (Roboto on most devices). Four sizes only:
 - 4 dp grid. Screen padding 20 dp. Gaps 8, 12, 16, 24.
 - Radius: 12 dp for buttons and rows, 20 dp for sheet tops.
 - Hairline dividers (1 px), no shadows, no gradients, no illustrations.
-- Icons: outlined, 24 dp, 1.75 px stroke, to match Instagram's web icons. Filled variant only for the active tab.
+- Icons: Instagram's own web glyphs, redrawn as 24 dp vectors (Direct bubble, Notifications heart, account, gear, close, chevron), so native and web icons are the same. Filled variant only for the active tab.
 - Touch targets at least 48 dp.
 
 ### Motion
@@ -77,7 +77,7 @@ System font (Roboto on most devices). Four sizes only:
 
 ### App icon
 
-- Adaptive icon: a single outlined message bubble, white on the accent blue.
+- Adaptive icon: Instagram's Direct glyph (bubble with the bolt), white on the accent blue. Personal use only; see the roadmap risks.
 - Android 13+ themed (monochrome) icon provided.
 - Label: "Instagram".
 
@@ -93,7 +93,7 @@ Instagram app (official) ── Lock sheet ── Pass running
 
 ### Bottom bar
 
-- Three icons, no labels: Messages, Activity (heart), Profile (avatar).
+- Three icons, no labels: Messages (Direct glyph), Activity (heart), Profile (your profile photo, read from Instagram's page; the account glyph until it loads). The active photo gets an accent ring.
 - 56 dp tall, `bg` color, hairline top divider.
 - Hidden inside a thread, in full-screen media and while the keyboard is open.
 - Tapping the active tab scrolls the inbox to the top.
