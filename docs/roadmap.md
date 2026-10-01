@@ -149,12 +149,14 @@ Run before every release and after any visible Instagram change.
 
 ## Open decisions
 
-| Decision | Options | Needed by |
-| --- | --- | --- |
-| Pass policy default | 2 × 5 min (Konvo v1.9.0), or 5 + 1 min (earlier Konvo build) | Phase 6 |
-| Patch file host | GitHub Pages on a small public repo, or raw file in a public gist | Phase 4 |
-| Update channel | Public releases repo (auto-update works), or private repo with manual installs | Phase 7 |
-| Icon | Own bubble mark (planned), or something closer to Instagram's glyph for personal use | Phase 0 |
+The build ships with the default in the last column; each is one setting to change.
+
+| Decision | Options | Needed by | Current default |
+| --- | --- | --- | --- |
+| Pass policy default | 2 × 5 min (Konvo v1.9.0), or 5 + 1 min (earlier Konvo build) | Phase 6 | 2 × 5 min (`PassPolicy.Default`); the user can pick 1 × 5, 3 × 5, 5 + 1 or 2 × 10 in lock setup |
+| Patch file host | GitHub Pages on a small public repo, or raw file in a public gist | Phase 4 | `patch/rules-patch.json` in this repo via raw GitHub (`dms.patchUrl` in `gradle.properties`). Works only once the repo, or a copy of the file, is public; until then the fetch fails silently and the bundled rules apply |
+| Update channel | Public releases repo (auto-update works), or private repo with manual installs | Phase 7 | GitHub Releases API on this repo (`dms.releasesRepo`). A private repo returns 404 and the app shows no update |
+| Icon | Own bubble mark (planned), or something closer to Instagram's glyph for personal use | Phase 0 | Own bubble mark |
 
 ## Risks
 

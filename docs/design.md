@@ -43,7 +43,7 @@ Follows the system light or dark setting. No in-app theme switch.
 | `bg` | `#FFFFFF` | `#000000` | Screen and WebView background |
 | `surface` | `#F2F2F2` | `#121212` | Sheets, list rows |
 | `text` | `#0A0A0A` | `#F5F5F5` | Primary text |
-| `text-muted` | `#737373` | `#A8A8A8` | Secondary text |
+| `text-muted` | `#6B6B6B` | `#A8A8A8` | Secondary text. Instagram's `#737373` fails AA on `surface`, so light mode is one step darker |
 | `divider` | `#DBDBDB` | `#262626` | Hairlines |
 | `accent` | `#0095F6` | `#0095F6` | Primary button, active state. Instagram's own blue, so native and web agree |
 | `danger` | `#ED4956` | `#ED4956` | Destructive actions only |
