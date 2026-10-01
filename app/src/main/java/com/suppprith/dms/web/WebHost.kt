@@ -16,6 +16,7 @@ import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.ScriptHandler
@@ -32,7 +33,9 @@ import com.suppprith.dms.notify.BadgeCount
 import com.suppprith.dms.ui.Route
 import com.suppprith.dms.ui.Tab
 import com.suppprith.dms.ui.UiState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -48,6 +51,7 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
     private var matcher = RuleMatcher(graph.patches.rules.value)
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var destroyed = false
+    private var avatarUrl: String? = null
 
     val webView: WebView = WebView(activity)
 
@@ -219,9 +223,31 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
                 state.badge = message.count
                 activity.lifecycleScope.launch { graph.settings.setLastBadge(message.count) }
             }
-            is PageMessage.User -> state.username = message.username
+            is PageMessage.User -> {
+                state.username = message.username
+                message.avatarUrl?.let(::loadAvatar)
+            }
             PageMessage.Haptic -> haptic()
             is PageMessage.Error -> graph.log.w("cage.js", "${message.where}: ${message.message}")
+        }
+    }
+
+    /** The Profile tab shows the user's photo, like Instagram's own tab bar. */
+    fun loadCachedAvatar() {
+        activity.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { graph.avatars.cached() }
+            if (bitmap != null && state.avatar == null) state.avatar = bitmap.asImageBitmap()
+        }
+    }
+
+    private fun loadAvatar(url: String) {
+        if (url == avatarUrl) return
+        avatarUrl = url
+        activity.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                if (graph.avatars.cachedUrl() == url) graph.avatars.cached() else graph.avatars.download(url)
+            }
+            if (bitmap != null) state.avatar = bitmap.asImageBitmap()
         }
     }
 
@@ -300,6 +326,9 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
             webView.clearHistory()
             state.signedIn = false
             state.username = null
+            state.avatar = null
+            avatarUrl = null
+            graph.avatars.clear()
             state.badge = 0
             webView.loadUrl(INBOX_URL)
             graph.log.i("session", "signed out of this device")

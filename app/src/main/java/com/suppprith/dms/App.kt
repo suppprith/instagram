@@ -10,6 +10,7 @@ import com.suppprith.dms.lock.PassRepository
 import com.suppprith.dms.notify.Notifications
 import com.suppprith.dms.notify.UnreadWorker
 import com.suppprith.dms.update.UpdateChecker
+import com.suppprith.dms.util.AvatarStore
 import com.suppprith.dms.util.DebugLog
 import com.suppprith.dms.util.Settings
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,7 @@ class AppGraph(context: Context) {
     val patches = PatchRepository(context, settings, log)
     val passes = PassRepository(context, scope)
     val updates = UpdateChecker(settings, log)
+    val avatars = AvatarStore(context)
     val foreground = AtomicBoolean(false)
 }
 

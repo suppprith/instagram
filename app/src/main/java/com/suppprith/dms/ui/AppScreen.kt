@@ -102,6 +102,7 @@ fun AppScreen(
                 BottomBar(
                     active = activeTab,
                     unread = state.badge > 0,
+                    avatar = state.avatar,
                     onTab = actions::onTab,
                     onLongPress = { if (it == Tab.Profile) actions.openSettings() },
                 )

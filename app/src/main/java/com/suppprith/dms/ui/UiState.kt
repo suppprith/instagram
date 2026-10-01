@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import com.suppprith.dms.update.Release
 
 enum class Screen { Main, LockSetup, DebugLog }
@@ -20,6 +21,7 @@ class UiState {
     var signedIn by mutableStateOf(false)
     var badge by mutableIntStateOf(0)
     var username by mutableStateOf<String?>(null)
+    var avatar by mutableStateOf<ImageBitmap?>(null)
     var customView by mutableStateOf<View?>(null)
     var showSettings by mutableStateOf(false)
     var screen by mutableStateOf(Screen.Main)

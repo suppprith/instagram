@@ -11,6 +11,11 @@ object Http {
     class TooLarge : Exception("response too large")
 
     fun get(url: String, headers: Map<String, String> = emptyMap(), maxBytes: Int = 256 * 1024): Response {
+        val (code, bytes) = getBytes(url, headers, maxBytes)
+        return Response(code, bytes.toString(Charsets.UTF_8))
+    }
+
+    fun getBytes(url: String, headers: Map<String, String> = emptyMap(), maxBytes: Int = 256 * 1024): Pair<Int, ByteArray> {
         val connection = URL(url).openConnection() as HttpURLConnection
         try {
             connection.connectTimeout = 10_000
@@ -29,9 +34,9 @@ object Http {
                     out.write(buffer, 0, n)
                     if (out.size() > maxBytes) throw TooLarge()
                 }
-                out.toString(Charsets.UTF_8.name())
-            }.orEmpty()
-            return Response(code, body)
+                out.toByteArray()
+            } ?: ByteArray(0)
+            return code to body
         } finally {
             connection.disconnect()
         }
