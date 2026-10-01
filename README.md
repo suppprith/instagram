@@ -1,19 +1,18 @@
-# quietdm
+# Instagram, messages only
 
-Instagram direct messages on Android, without the feed, explore or reels.
+An Android app that opens straight to your Instagram messages. No feed, Reels or Explore.
 
-## Goal
+It runs Instagram's own mobile website in a locked-down WebView. You sign in on Instagram's page; the app never sees your password or messages. An optional lock keeps the official Instagram app closed except for short daily passes to post or call.
 
-Open the app, see your conversations, reply, close it. Nothing else to scroll.
+Ships as a signed APK on GitHub Releases.
 
-## Planned features
+## Docs
 
-- Sign in with an existing Instagram account
-- Inbox and conversation threads
-- Send and receive text, photos, voice notes and shared posts
-- Message notifications
-- No feed, explore, reels or stories tab
+- [How Konvo works](docs/konvo-teardown.md): the iOS app this is based on
+- [Architecture](docs/architecture.md): web view, cage, notifications, lock, distribution
+- [Design](docs/design.md): principles, copy rules, visual system, every screen
+- [Roadmap](docs/roadmap.md): build phases, device checklist, open decisions
 
 ## Status
 
-Early planning. No code yet.
+Planning. No code yet.
