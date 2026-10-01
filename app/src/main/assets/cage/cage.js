@@ -1,0 +1,491 @@
+/*
+ * cage.js: injected at document start into https://www.instagram.com only.
+ *
+ * Keeps Instagram's mobile website to messages:
+ *   1. bounces feed URLs (home, Reels, Explore, a profile's scrolling tabs) out of the page,
+ *   2. hides the doorways to them inside allowed pages,
+ *   3. reports the route, readiness and unread count to the app over the "dms" bridge.
+ *
+ * Rules come from window.__DMS_RULES__, which the app inlines ahead of this file from
+ * assets/cage/rules.json plus the validated remote patch. Rules are data; this file is the
+ * only code. Every entry point is wrapped in try/catch: a failure here may show something we
+ * meant to hide, but must never stop navigation or blank the page.
+ */
+(function () {
+  'use strict';
+
+  if (window.__dmsCage) return;
+  if (window.top !== window) return;
+
+  var DEFAULT_RULES = {
+    block: ['^/$', '^/reels(/|$)', '^/reel/?$', '^/explore(/|$)', '^/[A-Za-z0-9._]+/(reels|tagged|saved)(/|$)'],
+    hide: [],
+    css: '',
+    redirect: '/direct/inbox/'
+  };
+  var IG_APP_ID = '936619743392459';
+  var BADGE_URL = '/api/v1/direct_v2/get_badge_count/?no_raven=1';
+  var BADGE_INTERVAL_MS = 30000;
+  var ENFORCE_INTERVAL_MS = 800;
+  var READY_TIMEOUT_MS = 6000;
+  var STYLE_ID = 'dms-cage-style';
+  var HIDDEN_ATTR = 'data-dms-hidden';
+  // Links that make up Instagram's own bottom tab bar. Matching on href is language-proof.
+  var NAV_HREFS = ['/', '/explore/', '/reels/', '/direct/inbox/', '/create/select/'];
+  var RESERVED_FIRST_SEGMENTS = [
+    'direct', 'explore', 'reels', 'reel', 'p', 'stories', 'accounts', 'notifications', 'create',
+    'challenge', 'about', 'legal', 'developer', 'web', 'api', 'emails', 'session', 'privacy'
+  ];
+
+  var rules = null;
+  var blockPatterns = [];
+  var lastPath = null;
+  var lastThreadPath = null;
+  var readySent = false;
+  var username = null;
+  var bounceCount = 0;
+  var bounceWindowStart = 0;
+
+  // ---------------------------------------------------------------- bridge
+
+  function post(message) {
+    try {
+      var bridge = window.dms;
+      if (bridge && typeof bridge.postMessage === 'function') bridge.postMessage(JSON.stringify(message));
+    } catch (e) { /* the bridge is optional */ }
+  }
+
+  function reportError(where, e) {
+    post({ type: 'error', where: where, message: String((e && e.message) || e).slice(0, 300) });
+  }
+
+  function guard(where, fn) {
+    return function () {
+      try { return fn.apply(this, arguments); } catch (e) { reportError(where, e); }
+    };
+  }
+
+  // Navigation goes through one function so tests can observe it (jsdom cannot navigate).
+  function go(url) {
+    if (typeof window.__dmsGo === 'function') window.__dmsGo(url);
+    else location.replace(url);
+  }
+
+  // ---------------------------------------------------------------- rules
+
+  function setRules(next) {
+    var r = next || {};
+    rules = {
+      block: Array.isArray(r.block) ? r.block : DEFAULT_RULES.block,
+      hide: Array.isArray(r.hide) ? r.hide : [],
+      css: typeof r.css === 'string' ? r.css : '',
+      redirect: typeof r.redirect === 'string' && r.redirect.charAt(0) === '/' ? r.redirect : DEFAULT_RULES.redirect
+    };
+    blockPatterns = [];
+    for (var i = 0; i < rules.block.length; i++) {
+      try { blockPatterns.push(new RegExp(rules.block[i])); } catch (e) { reportError('rule', e); }
+    }
+  }
+
+  function isBlocked(path) {
+    var p = path || '/';
+    for (var i = 0; i < blockPatterns.length; i++) {
+      if (blockPatterns[i].test(p)) return true;
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------- styles
+
+  function isValidSelector(selector) {
+    try {
+      document.createDocumentFragment().querySelector(selector);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function buildCss() {
+    var out = '[' + HIDDEN_ATTR + ']{display:none!important}\n';
+    for (var i = 0; i < rules.hide.length; i++) {
+      var selector = rules.hide[i];
+      if (typeof selector === 'string' && isValidSelector(selector)) {
+        out += selector + '{display:none!important}\n';
+      }
+    }
+    // Pages render under the native status bar and above the native bottom bar.
+    out += 'html,body{overscroll-behavior-y:none}\n';
+    return out + (rules.css || '');
+  }
+
+  function applyStyle() {
+    var root = document.head || document.documentElement;
+    if (!root) return;
+    var style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = STYLE_ID;
+      root.appendChild(style);
+    } else if (!style.isConnected) {
+      root.appendChild(style);
+    }
+    var css = buildCss();
+    if (style.textContent !== css) style.textContent = css;
+  }
+
+  // ---------------------------------------------------------------- the gate
+
+  function isThreadPath(path) {
+    return /^\/direct\/t\/[^/]+\/?$/.test(path);
+  }
+
+  /** Where a bounced page goes: back to the last thread if we just came from one, else the inbox. */
+  function bounceTarget() {
+    if (lastThreadPath && !isBlocked(lastThreadPath)) return lastThreadPath;
+    return rules.redirect;
+  }
+
+  function enforce() {
+    var path = location.pathname;
+    if (!isBlocked(path)) return false;
+
+    // Never loop: more than 5 bounces in 10 s means something is wrong; fall back to the inbox.
+    var now = Date.now();
+    if (now - bounceWindowStart > 10000) { bounceWindowStart = now; bounceCount = 0; }
+    bounceCount++;
+    var target = bounceCount > 5 ? rules.redirect : bounceTarget();
+    if (target === path || isBlocked(target)) target = DEFAULT_RULES.redirect;
+
+    post({ type: 'blocked', path: path });
+    go(target);
+    return true;
+  }
+
+  function onRoute() {
+    if (enforce()) return;
+    var path = location.pathname;
+    if (path === lastPath) return;
+    lastPath = path;
+    if (isThreadPath(path)) lastThreadPath = path;
+    else if (path.indexOf('/direct/inbox') === 0) lastThreadPath = null;
+    post({ type: 'route', path: path });
+    scheduleScan();
+  }
+
+  function wrapHistory() {
+    ['pushState', 'replaceState'].forEach(function (name) {
+      var original = history[name];
+      if (typeof original !== 'function') return;
+      history[name] = function () {
+        var result = original.apply(this, arguments);
+        try { onRoute(); } catch (e) { reportError(name, e); }
+        return result;
+      };
+    });
+    window.addEventListener('popstate', guard('popstate', onRoute));
+  }
+
+  // ---------------------------------------------------------------- page scan
+
+  var scanQueued = false;
+
+  function scheduleScan() {
+    if (scanQueued) return;
+    scanQueued = true;
+    setTimeout(function () {
+      scanQueued = false;
+      scan();
+    }, 120);
+  }
+
+  function hrefOf(a) {
+    return a.getAttribute('href') || '';
+  }
+
+  function isFixedOrSticky(el) {
+    try {
+      var position = window.getComputedStyle(el).position;
+      return position === 'fixed' || position === 'sticky';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function countNavLinks(el) {
+    var links = el.querySelectorAll('a[href]');
+    var seen = {};
+    var count = 0;
+    for (var i = 0; i < links.length; i++) {
+      var href = hrefOf(links[i]);
+      if (NAV_HREFS.indexOf(href) >= 0 && !seen[href]) { seen[href] = true; count++; }
+    }
+    return count;
+  }
+
+  function looksLikeProfileHref(href) {
+    var m = /^\/([A-Za-z0-9._]+)\/$/.exec(href);
+    return !!m && RESERVED_FIRST_SEGMENTS.indexOf(m[1].toLowerCase()) < 0;
+  }
+
+  /**
+   * Instagram's own tab bar: a fixed or sticky container holding at least two of the feed tab
+   * links. The app draws its own bar, so this one is hidden. Its profile link (the only profile
+   * href inside it) also tells us the signed-in username.
+   */
+  function hideInstagramTabBar() {
+    // Start from the feed tabs only, so a top header holding just the logo and inbox link stays.
+    var anchors = document.querySelectorAll('a[href="/explore/"], a[href="/reels/"]');
+    for (var i = 0; i < anchors.length; i++) {
+      var el = anchors[i].parentElement;
+      for (var depth = 0; el && el !== document.body && depth < 8; depth++, el = el.parentElement) {
+        if (el.tagName === 'NAV' || isFixedOrSticky(el)) {
+          if (countNavLinks(el) >= 2) {
+            learnUsername(el);
+            if (!el.hasAttribute(HIDDEN_ATTR)) el.setAttribute(HIDDEN_ATTR, 'tabbar');
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  function learnUsername(container) {
+    if (username) return;
+    var links = container.querySelectorAll('a[href]');
+    for (var i = 0; i < links.length; i++) {
+      var href = hrefOf(links[i]);
+      if (looksLikeProfileHref(href)) {
+        setUsername(href.slice(1, -1));
+        return;
+      }
+    }
+  }
+
+  function setUsername(name) {
+    if (!name || name === username) return;
+    username = name;
+    try { localStorage.setItem('dms.username', name); } catch (e) { /* storage may be blocked */ }
+    post({ type: 'user', username: name });
+  }
+
+  function checkReady() {
+    if (readySent) return;
+    var found =
+      document.querySelector('a[href^="/direct/t/"]') ||
+      document.querySelector('[role="textbox"], textarea') ||
+      document.querySelector('input[name="username"], input[type="password"]') ||
+      document.querySelector('main, [role="main"]');
+    if (found) sendReady();
+  }
+
+  function sendReady() {
+    if (readySent) return;
+    readySent = true;
+    post({ type: 'ready', path: location.pathname });
+  }
+
+  function scan() {
+    try {
+      applyStyle();
+      hideInstagramTabBar();
+      checkReady();
+    } catch (e) {
+      reportError('scan', e);
+    }
+  }
+
+  function observe() {
+    if (typeof MutationObserver !== 'function') return;
+    var observer = new MutationObserver(scheduleScan);
+    var start = function () {
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    };
+    if (document.documentElement) start();
+  }
+
+  // ---------------------------------------------------------------- reel swipe guard
+
+  /** On a single shared reel, vertical swipes would move on to the next reel. Stop them. */
+  function isSingleReel() {
+    return /^\/reels?\/[^/]+\/?$/.test(location.pathname);
+  }
+
+  function inScrollableDialog(target) {
+    return !!(target && target.closest && target.closest('[role="dialog"]'));
+  }
+
+  function installReelGuard() {
+    var startX = 0;
+    var startY = 0;
+    window.addEventListener('touchstart', guard('touchstart', function (e) {
+      if (!e.touches || !e.touches.length) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }), { capture: true, passive: true });
+    window.addEventListener('touchmove', guard('touchmove', function (e) {
+      if (!isSingleReel() || inScrollableDialog(e.target) || !e.touches || !e.touches.length) return;
+      var dx = Math.abs(e.touches[0].clientX - startX);
+      var dy = Math.abs(e.touches[0].clientY - startY);
+      if (dy > 8 && dy > dx && e.cancelable) e.preventDefault();
+    }), { capture: true, passive: false });
+    window.addEventListener('wheel', guard('wheel', function (e) {
+      if (isSingleReel() && !inScrollableDialog(e.target) && e.cancelable) e.preventDefault();
+    }), { capture: true, passive: false });
+  }
+
+  // ---------------------------------------------------------------- send haptic
+
+  /** A message was sent when the composer had text and is empty right after Enter or a click. */
+  function composerText() {
+    var box = document.querySelector('[role="textbox"][contenteditable="true"], textarea');
+    if (!box) return '';
+    return (box.value !== undefined && box.tagName === 'TEXTAREA' ? box.value : box.textContent) || '';
+  }
+
+  function installSendHaptic() {
+    var check = function () {
+      if (!isThreadPath(location.pathname)) return;
+      var before = composerText().trim();
+      if (!before) return;
+      setTimeout(guard('haptic', function () {
+        if (!composerText().trim()) post({ type: 'haptic' });
+      }), 250);
+    };
+    document.addEventListener('keydown', guard('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) check();
+    }), true);
+    document.addEventListener('click', guard('click', check), true);
+  }
+
+  // ---------------------------------------------------------------- unread badge
+
+  function cookie(name) {
+    var parts = ('; ' + document.cookie).split('; ' + name + '=');
+    return parts.length < 2 ? null : parts.pop().split(';').shift();
+  }
+
+  function pollBadge() {
+    if (document.visibilityState === 'hidden' || !cookie('ds_user_id') || typeof fetch !== 'function') return;
+    fetch(BADGE_URL, {
+      credentials: 'include',
+      headers: { 'X-IG-App-ID': IG_APP_ID, 'X-CSRFToken': cookie('csrftoken') || '', 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (response) {
+      return response.ok ? response.json() : null;
+    }).then(function (body) {
+      if (body && typeof body.badge_count === 'number') post({ type: 'badge', count: body.badge_count });
+    }).catch(function () { /* offline or rate limited; try again next round */ });
+  }
+
+  // ---------------------------------------------------------------- messages from the app
+
+  function clickLink(path) {
+    var link = document.querySelector('a[href="' + path.replace(/"/g, '') + '"]');
+    if (link) { link.click(); return true; }
+    return false;
+  }
+
+  function navigateTo(path) {
+    if (typeof path !== 'string' || path.charAt(0) !== '/' || isBlocked(path)) return;
+    if (location.pathname === path) return;
+    if (!clickLink(path)) go(path);
+  }
+
+  function goToOwnProfile() {
+    if (username) { navigateTo('/' + username + '/'); return; }
+    var id = cookie('ds_user_id');
+    if (!id || typeof fetch !== 'function') { navigateTo('/accounts/edit/'); return; }
+    fetch('/api/v1/users/' + encodeURIComponent(id) + '/info/', {
+      credentials: 'include',
+      headers: { 'X-IG-App-ID': IG_APP_ID }
+    }).then(function (response) {
+      return response.ok ? response.json() : null;
+    }).then(function (body) {
+      var name = body && body.user && body.user.username;
+      if (name) { setUsername(name); navigateTo('/' + name + '/'); } else navigateTo('/accounts/edit/');
+    }).catch(function () { navigateTo('/accounts/edit/'); });
+  }
+
+  function scrollToTop() {
+    window.scrollTo(0, 0);
+    var all = document.querySelectorAll('div');
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.scrollTop > 0 && el.scrollHeight > el.clientHeight) el.scrollTop = 0;
+    }
+  }
+
+  function onAppMessage(event) {
+    var data = event && event.data;
+    var message = typeof data === 'string' ? JSON.parse(data) : data;
+    if (!message || typeof message.type !== 'string') return;
+    switch (message.type) {
+      case 'navigate':
+        if (message.target === 'profile') goToOwnProfile();
+        else navigateTo(message.path);
+        break;
+      case 'rules':
+        setRules(message.rules);
+        applyStyle();
+        enforce();
+        break;
+      case 'scrollTop':
+        scrollToTop();
+        break;
+      case 'badge':
+        pollBadge();
+        break;
+    }
+  }
+
+  function listen() {
+    var bridge = window.dms;
+    if (!bridge) return;
+    var handler = guard('message', onAppMessage);
+    if (typeof bridge.addEventListener === 'function') bridge.addEventListener('message', handler);
+    else bridge.onmessage = handler;
+  }
+
+  // ---------------------------------------------------------------- boot
+
+  function boot() {
+    setRules(window.__DMS_RULES__ || DEFAULT_RULES);
+    window.__dmsCage = { isBlocked: isBlocked, enforce: enforce, rules: function () { return rules; } };
+    try { username = localStorage.getItem('dms.username'); } catch (e) { username = null; }
+
+    // A blocked page is left before Instagram renders anything.
+    if (enforce()) return;
+
+    post({ type: 'hello', path: location.pathname });
+    listen();
+    applyStyle();
+    wrapHistory();
+    onRoute();
+    observe();
+    installReelGuard();
+    installSendHaptic();
+
+    document.addEventListener('DOMContentLoaded', guard('domcontentloaded', function () {
+      onRoute();
+      scan();
+      setTimeout(sendReady, READY_TIMEOUT_MS);
+    }));
+    window.addEventListener('load', guard('load', scan));
+    document.addEventListener('visibilitychange', guard('visibility', function () {
+      if (document.visibilityState === 'visible') pollBadge();
+    }));
+
+    setInterval(guard('interval', function () {
+      onRoute();
+      scan();
+    }), ENFORCE_INTERVAL_MS);
+    setInterval(guard('badge', pollBadge), BADGE_INTERVAL_MS);
+    setTimeout(guard('badge', pollBadge), 2000);
+  }
+
+  try {
+    boot();
+  } catch (e) {
+    reportError('boot', e);
+  }
+})();
