@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "block": [
+    "^/$",
+    "^/reels(/|$)",
+    "^/reel/?$",
+    "^/explore(/|$)",
+    "^/[A-Za-z0-9._]+/(reels|tagged|saved)(/|$)"
+  ],
+  "hide": [
+    "a[href='/']",
+    "a[href^='/explore/']",
+    "a[href^='/reels/']",
+    "a[href$='/reels/']",
+    "a[href$='/tagged/']",
+    "a[href$='/saved/']",
+    "a[href^='/create/']",
+    "a[href^='/explore/people']",
+    "a[href*='play.google.com']",
+    "a[href*='apps.apple.com']",
+    "a[href*='itunes.apple.com']",
+    "a[href^='intent:']",
+    "a[href^='instagram:']",
+    "[data-dms-hidden]"
+  ],
+  "css": "",
+  "redirect": "/direct/inbox/"
+}

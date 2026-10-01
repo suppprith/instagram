@@ -1,0 +1,39 @@
+{
+  "comment": "Shared by RulesTest (JUnit) and cage.test.mjs (jsdom) so native and in-page gates agree.",
+  "blocked": [
+    "/",
+    "/reels/",
+    "/reels",
+    "/reels/C1a2b3c4d5/",
+    "/reel/",
+    "/reel",
+    "/explore/",
+    "/explore",
+    "/explore/tags/cats/",
+    "/explore/people/",
+    "/user/reels/",
+    "/user.name_1/tagged/",
+    "/someone/saved/",
+    "/someone/saved/all-posts/"
+  ],
+  "allowed": [
+    "/direct/inbox/",
+    "/direct/t/123/",
+    "/direct/t/340282366841710300949128123456789/",
+    "/direct/requests/",
+    "/direct/new/",
+    "/reel/abc/",
+    "/reel/C1a2b3c4d5/",
+    "/p/abc/",
+    "/stories/user/123/",
+    "/stories/highlights/1789/",
+    "/notifications/",
+    "/accounts/activity/",
+    "/accounts/login/",
+    "/accounts/login/two_factor/",
+    "/accounts/edit/",
+    "/challenge/",
+    "/user/",
+    "/user.name_1/"
+  ]
+}
