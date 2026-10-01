@@ -289,7 +289,7 @@ The deliverable is a sideloaded APK, not a Play Store listing. This sidesteps Pl
 - **Build:** `./gradlew assembleRelease` produces `app-release.apk`, R8-minified, signed with our own release keystore (APK signature scheme v2 + v3).
 - **Keystore:** created once, kept outside the repo. CI gets it as a base64 GitHub Actions secret plus passwords. Losing it means users must uninstall to update, so back it up.
 - **Release flow:** pushing a `v*` tag runs a workflow that builds, signs, and attaches `instagram-dms-<version>.apk` and its SHA-256 to a GitHub Release.
-- **Updates:** the app checks the GitHub Releases API once a day (`/repos/suppprith/quietdm/releases/latest`), compares `versionCode`, and shows "Update available" linking to the APK. Installing uses the system installer (`REQUEST_INSTALL_PACKAGES` is not needed if we just open the download in the browser). Users of [Obtainium](https://github.com/ImranR98/Obtainium) can track the repo directly. The repo is private, so this needs a decision: make releases public (a separate public releases repo works) or skip auto-update.
+- **Updates:** the app checks the GitHub Releases API once a day (`/repos/suppprith/instagram/releases/latest`), compares `versionCode`, and shows "Update available" linking to the APK. Installing uses the system installer (`REQUEST_INSTALL_PACKAGES` is not needed if we just open the download in the browser). Users of [Obtainium](https://github.com/ImranR98/Obtainium) can track the repo directly. The repo is private, so this needs a decision: make releases public (a separate public releases repo works) or skip auto-update.
 - **ABI:** no native code, so one universal APK.
 
 ### Sideloading and the lock
