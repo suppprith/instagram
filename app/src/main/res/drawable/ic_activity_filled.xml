@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Instagram's Notifications heart, filled (active tab) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path android:pathData="M12,20.3C12,20.3 3.5,15.4 3.5,9.3C3.5,6.6 5.5,4.5 8.1,4.5C9.8,4.5 11.2,5.4 12,6.8C12.8,5.4 14.2,4.5 15.9,4.5C18.5,4.5 20.5,6.6 20.5,9.3C20.5,15.4 12,20.3 12,20.3z" android:strokeColor="#FF000000" android:strokeWidth="1.75" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#FF000000" />
+    <path android:pathData="M17.075,1.987a5.852,5.852 0,0 0,-5.07 2.66l-0.008,0.012l-0.01,-0.014a5.878,5.878 0,0 0,-5.062 -2.658A6.719,6.719 0,0 0,0.5 8.952c0,3.514 2.581,5.757 5.077,7.927c0.302,0.262 0.607,0.527 0.91,0.797l1.089,0.973c2.112,1.89 3.149,2.813 3.642,3.133a1.38,1.38 0,0 0,1.564 0c0.472,-0.306 1.334,-1.07 3.755,-3.234l0.976,-0.872c0.305,-0.27 0.611,-0.535 0.92,-0.801c2.495,-2.169 5.076,-4.412 5.076,-7.926a6.519,6.519 0,0 0,-6.425 -6.965z" android:fillColor="#FF000000" />
 </vector>
