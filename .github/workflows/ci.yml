@@ -1,8 +1,8 @@
 name: CI
 
+# Every push runs once; pull requests show the result of their branch's push run.
 on:
   push:
-  pull_request:
 
 concurrency:
   group: ci-${{ github.ref }}
