@@ -93,7 +93,7 @@ class JsBridge(private val onMessage: (PageMessage) -> Unit) : WebViewCompat.Web
                 "ready" -> PageMessage.Ready(str("path"))
                 "route" -> PageMessage.RouteChanged(str("path"))
                 "blocked" -> PageMessage.Blocked(str("path"))
-                "badge" -> (obj["count"] as? JsonPrimitive)?.intOrNull?.takeIf { it >= 0 }?.let { PageMessage.Badge(it) }
+                "badge" -> (obj["count"] as? JsonPrimitive)?.takeIf { !it.isString }?.intOrNull?.takeIf { it >= 0 }?.let { PageMessage.Badge(it) }
                 "user" -> str("username").takeIf { Regex("^[A-Za-z0-9._]{1,30}$").matches(it) }
                     ?.let { PageMessage.User(it, str("avatar").takeIf(::isInstagramImage)) }
                 "haptic" -> PageMessage.Haptic
