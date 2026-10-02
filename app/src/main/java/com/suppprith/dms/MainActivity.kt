@@ -93,7 +93,6 @@ class MainActivity : ComponentActivity(), Actions {
         mainHandler.postDelayed({ state.splashTimedOut = true }, SPLASH_TIMEOUT_MS)
 
         host.start(savedInstanceState)
-        host.loadCachedAvatar()
         if (savedInstanceState == null) handleIntent(intent)
 
         onBackPressedDispatcher.addCallback(this) {

@@ -33,10 +33,6 @@
   var SINGLE_REEL_CLASS = 'dms-single-reel';
   // Links that make up Instagram's own bottom tab bar. Matching on href is language-proof.
   var NAV_HREFS = ['/', '/explore/', '/reels/', '/direct/inbox/', '/create/select/'];
-  var RESERVED_FIRST_SEGMENTS = [
-    'direct', 'explore', 'reels', 'reel', 'p', 'stories', 'accounts', 'notifications', 'create',
-    'challenge', 'about', 'legal', 'developer', 'web', 'api', 'emails', 'session', 'privacy'
-  ];
 
   var rules = null;
   var blockPatterns = [];
@@ -44,8 +40,6 @@
   var lastThreadPath = readSession('dms.lastThread');
   var reelHome = null;
   var readySent = false;
-  var username = null;
-  var avatarSent = null;
   var bounceCount = 0;
   var bounceWindowStart = 0;
 
@@ -268,15 +262,9 @@
     return count;
   }
 
-  function looksLikeProfileHref(href) {
-    var m = /^\/([A-Za-z0-9._]+)\/$/.exec(href);
-    return !!m && RESERVED_FIRST_SEGMENTS.indexOf(m[1].toLowerCase()) < 0;
-  }
-
   /**
    * Instagram's own tab bar: a fixed or sticky container holding at least two of the feed tab
-   * links. The app draws its own bar, so this one is hidden. Its profile link (the only profile
-   * href inside it) also tells us the signed-in username.
+   * links. The app has no feed tabs, so this one is hidden.
    */
   function hideInstagramTabBar() {
     // Start from the feed tabs only, so a top header holding just the logo and inbox link stays.
@@ -286,37 +274,12 @@
       for (var depth = 0; el && el !== document.body && depth < 8; depth++, el = el.parentElement) {
         if (el.tagName === 'NAV' || isFixedOrSticky(el)) {
           if (countNavLinks(el) >= 2) {
-            learnUser(el);
             if (!el.hasAttribute(HIDDEN_ATTR)) el.setAttribute(HIDDEN_ATTR, 'tabbar');
           }
           break;
         }
       }
     }
-  }
-
-  /** The profile link in Instagram's tab bar carries the username and the profile photo. */
-  function learnUser(container) {
-    if (username && avatarSent) return;
-    var links = container.querySelectorAll('a[href]');
-    for (var i = 0; i < links.length; i++) {
-      var href = hrefOf(links[i]);
-      if (looksLikeProfileHref(href)) {
-        var img = links[i].querySelector('img');
-        setUser(href.slice(1, -1), img ? img.getAttribute('src') : null);
-        return;
-      }
-    }
-  }
-
-  function setUser(name, avatar) {
-    if (!name) return;
-    var photo = typeof avatar === 'string' && avatar.indexOf('https://') === 0 ? avatar : null;
-    if (name === username && (!photo || photo === avatarSent)) return;
-    username = name;
-    if (photo) avatarSent = photo;
-    try { localStorage.setItem('dms.username', name); } catch (e) { /* storage may be blocked */ }
-    post({ type: 'user', username: name, avatar: photo });
   }
 
   function checkReady() {
@@ -460,21 +423,6 @@
     if (!clickLink(path)) go(path);
   }
 
-  function goToOwnProfile() {
-    if (username) { navigateTo('/' + username + '/'); return; }
-    var id = cookie('ds_user_id');
-    if (!id || typeof fetch !== 'function') { navigateTo('/accounts/edit/'); return; }
-    fetch('/api/v1/users/' + encodeURIComponent(id) + '/info/', {
-      credentials: 'include',
-      headers: { 'X-IG-App-ID': IG_APP_ID }
-    }).then(function (response) {
-      return response.ok ? response.json() : null;
-    }).then(function (body) {
-      var name = body && body.user && body.user.username;
-      if (name) { setUser(name, body.user.profile_pic_url); navigateTo('/' + name + '/'); } else navigateTo('/accounts/edit/');
-    }).catch(function () { navigateTo('/accounts/edit/'); });
-  }
-
   function scrollToTop() {
     window.scrollTo(0, 0);
     var all = document.querySelectorAll('div');
@@ -490,8 +438,7 @@
     if (!message || typeof message.type !== 'string') return;
     switch (message.type) {
       case 'navigate':
-        if (message.target === 'profile') goToOwnProfile();
-        else navigateTo(message.path);
+        navigateTo(message.path);
         break;
       case 'rules':
         setRules(message.rules);
@@ -520,7 +467,6 @@
   function boot() {
     setRules(window.__DMS_RULES__ || DEFAULT_RULES);
     window.__dmsCage = { isBlocked: isBlocked, enforce: enforce, rules: function () { return rules; } };
-    try { username = localStorage.getItem('dms.username'); } catch (e) { username = null; }
 
     // A blocked page is left before Instagram renders anything.
     if (enforce()) return;

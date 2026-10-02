@@ -6,7 +6,6 @@ import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
-import com.suppprith.dms.cage.UrlParts
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +21,6 @@ sealed interface PageMessage {
     data class RouteChanged(val path: String) : PageMessage
     data class Blocked(val path: String) : PageMessage
     data class Badge(val count: Int) : PageMessage
-    data class User(val username: String, val avatarUrl: String?) : PageMessage
     data object Haptic : PageMessage
     data class Error(val where: String, val message: String) : PageMessage
 }
@@ -78,13 +76,6 @@ class JsBridge(private val onMessage: (PageMessage) -> Unit) : WebViewCompat.Web
         const val ORIGIN = "https://$HOST"
         private const val MAX_MESSAGE = 8 * 1024
 
-        /** Profile photos come from Instagram's CDNs only. */
-        fun isInstagramImage(url: String): Boolean {
-            val parts = UrlParts.parse(url) ?: return false
-            return parts.scheme == "https" &&
-                (parts.host.endsWith(".cdninstagram.com") || parts.host.endsWith(".fbcdn.net"))
-        }
-
         fun parse(text: String): PageMessage? {
             val obj = runCatching { Json.parseToJsonElement(text) }.getOrNull() as? JsonObject ?: return null
             fun str(key: String) = (obj[key] as? JsonPrimitive)?.contentOrNull.orEmpty()
@@ -94,8 +85,6 @@ class JsBridge(private val onMessage: (PageMessage) -> Unit) : WebViewCompat.Web
                 "route" -> PageMessage.RouteChanged(str("path"))
                 "blocked" -> PageMessage.Blocked(str("path"))
                 "badge" -> (obj["count"] as? JsonPrimitive)?.takeIf { !it.isString }?.intOrNull?.takeIf { it >= 0 }?.let { PageMessage.Badge(it) }
-                "user" -> str("username").takeIf { Regex("^[A-Za-z0-9._]{1,30}$").matches(it) }
-                    ?.let { PageMessage.User(it, str("avatar").takeIf(::isInstagramImage)) }
                 "haptic" -> PageMessage.Haptic
                 "error" -> PageMessage.Error(str("where").take(40), str("message").take(300))
                 else -> null
