@@ -2,8 +2,6 @@ package com.suppprith.dms.ui
 
 import com.suppprith.dms.cage.UrlParts
 
-enum class Tab { Messages, Activity, Profile }
-
 /** What the native frame shows for a page. Pure, so it is tested without Android. */
 data class Route(val url: String?, val host: String, val path: String) {
     val isInstagram get() = host == "www.instagram.com" || host == "instagram.com"
@@ -18,16 +16,6 @@ data class Route(val url: String?, val host: String, val path: String) {
     /** Sign-in, two-factor, challenges and anything off Instagram's main site. */
     val isAuthFlow
         get() = !isInstagram || authPrefixes.any { path.startsWith(it) }
-
-    fun tab(ownUsername: String?): Tab? = when {
-        !isInstagram -> null
-        path.startsWith("/direct/") -> Tab.Messages
-        path.startsWith("/notifications") || path.startsWith("/accounts/activity") -> Tab.Activity
-        ownUsername != null && path.trimEnd('/').equals("/$ownUsername", ignoreCase = true) -> Tab.Profile
-        else -> null
-    }
-
-    fun isOwnProfile(ownUsername: String?): Boolean = tab(ownUsername) == Tab.Profile
 
     companion object {
         private val authPrefixes = listOf(
@@ -52,7 +40,6 @@ data class Route(val url: String?, val host: String, val path: String) {
     }
 }
 
-/** The bottom bar shows only on the main Instagram pages, after sign-in. */
-fun bottomBarVisible(route: Route, signedIn: Boolean, keyboardOpen: Boolean, fullScreenVideo: Boolean): Boolean =
-    signedIn && !keyboardOpen && !fullScreenVideo &&
-        !route.isAuthFlow && !route.isThread && !route.isFullScreenMedia
+/** The settings gear and banners show only on the inbox, after sign-in, with the keyboard closed. */
+fun inboxControlsVisible(route: Route, signedIn: Boolean, keyboardOpen: Boolean, fullScreenVideo: Boolean): Boolean =
+    signedIn && !keyboardOpen && !fullScreenVideo && route.isInbox

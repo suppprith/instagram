@@ -31,7 +31,6 @@ import com.suppprith.dms.cage.UrlParts
 import com.suppprith.dms.graph
 import com.suppprith.dms.notify.BadgeCount
 import com.suppprith.dms.ui.Route
-import com.suppprith.dms.ui.Tab
 import com.suppprith.dms.ui.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -260,27 +259,6 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
         webView.performHapticFeedback(constant)
     }
 
-    /** Bottom bar taps. Uses Instagram's own in-page routing when the bridge is up, else a load. */
-    fun navigate(tab: Tab) {
-        val route = state.route
-        if (route.tab(state.username) == tab) {
-            if (tab == Tab.Messages && !route.isInbox) navigatePath(INBOX_PATH) else bridge.send("scrollTop")
-            return
-        }
-        when (tab) {
-            Tab.Messages -> navigatePath(INBOX_PATH)
-            Tab.Activity -> navigatePath(ACTIVITY_PATH)
-            Tab.Profile -> {
-                val name = state.username
-                when {
-                    route.isInstagram && bridge.send("navigate", mapOf("target" to JsonPrimitive("profile"))) -> Unit
-                    name != null -> webView.loadUrl("$INSTAGRAM_ORIGIN/$name/")
-                    else -> webView.loadUrl("$INSTAGRAM_ORIGIN/accounts/edit/")
-                }
-            }
-        }
-    }
-
     fun navigatePath(path: String) {
         val sent = state.route.isInstagram && bridge.send("navigate", mapOf("path" to JsonPrimitive(path)))
         if (!sent) webView.loadUrl(INSTAGRAM_ORIGIN + path)
@@ -409,7 +387,6 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
     companion object {
         const val INSTAGRAM_ORIGIN = "https://www.instagram.com"
         const val INBOX_PATH = Rules.INBOX_PATH
-        const val ACTIVITY_PATH = "/notifications/"
         const val INBOX_URL = INSTAGRAM_ORIGIN + INBOX_PATH
 
         private val OFFLINE_ERRORS = setOf(

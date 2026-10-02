@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -61,8 +62,7 @@ fun AppScreen(
 ) {
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val route = state.route
-    val barVisible = bottomBarVisible(route, state.signedIn, keyboardOpen, state.customView != null)
-    val activeTab = route.tab(state.username)
+    val controls = inboxControlsVisible(route, state.signedIn, keyboardOpen, state.customView != null)
 
     Box(Modifier.fillMaxSize().background(Dms.colors.bg)) {
         Column(Modifier.fillMaxSize().imePadding()) {
@@ -73,25 +73,15 @@ fun AppScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
             ) {
                 CageWebView(webView, route)
-                if (barVisible && route.isOwnProfile(state.username)) {
-                    IconButton(
-                        onClick = actions::openSettings,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .background(Dms.colors.bg.copy(alpha = 0.92f), CircleShape),
-                    ) {
-                        Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings), tint = Dms.colors.text, modifier = Modifier.size(24.dp))
-                    }
-                }
+                if (controls) SettingsButton(actions::openSettings, Modifier.align(Alignment.BottomEnd))
             }
 
-            if (barVisible) {
+            if (controls) {
                 val update = state.update
                 when {
                     settings.lockEnabled && !state.lockServiceEnabled ->
                         Banner(stringResource(R.string.banner_lock_off), stringResource(R.string.turn_on), actions::openLockSetup)
-                    update != null && route.isInbox && settings.dismissedUpdate != update.version.toString() ->
+                    update != null && settings.dismissedUpdate != update.version.toString() ->
                         Banner(
                             stringResource(R.string.banner_update, update.version.toString()),
                             stringResource(R.string.download),
@@ -99,16 +89,8 @@ fun AppScreen(
                             onDismiss = { actions.dismissUpdate(update) },
                         )
                 }
-                BottomBar(
-                    active = activeTab,
-                    unread = state.badge > 0,
-                    avatar = state.avatar,
-                    onTab = actions::onTab,
-                    onLongPress = { if (it == Tab.Profile) actions.openSettings() },
-                )
-            } else if (state.customView == null) {
-                Spacer(Modifier.navigationBarsPadding())
             }
+            if (state.customView == null) Spacer(Modifier.navigationBarsPadding())
         }
 
         // Overlays, in priority order.
@@ -143,6 +125,21 @@ fun AppScreen(
 
         if (state.showSettings) SettingsSheet(state, settings, system.batteryOptimized, actions)
         if (state.signOutConfirm) SignOutDialog(actions)
+    }
+}
+
+/** The only native control on the inbox: a quiet gear in the corner that opens Settings. */
+@Composable
+private fun SettingsButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .padding(16.dp)
+            .size(48.dp)
+            .background(Dms.colors.surface, CircleShape)
+            .border(1.dp, Dms.colors.divider, CircleShape),
+    ) {
+        Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings), tint = Dms.colors.text, modifier = Modifier.size(22.dp))
     }
 }
 

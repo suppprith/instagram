@@ -40,7 +40,6 @@ import com.suppprith.dms.ui.Actions
 import com.suppprith.dms.ui.AppScreen
 import com.suppprith.dms.ui.Screen
 import com.suppprith.dms.ui.SystemState
-import com.suppprith.dms.ui.Tab
 import com.suppprith.dms.ui.UiState
 import com.suppprith.dms.ui.theme.DmsTheme
 import com.suppprith.dms.update.Release
@@ -238,8 +237,6 @@ class MainActivity : ComponentActivity(), Actions {
     }
 
     // ------------------------------------------------------------------ Actions
-
-    override fun onTab(tab: Tab) = host.navigate(tab)
 
     override fun openSettings() {
         state.showSettings = true

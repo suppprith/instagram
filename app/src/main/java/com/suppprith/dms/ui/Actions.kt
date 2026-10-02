@@ -5,7 +5,6 @@ import com.suppprith.dms.update.Release
 
 /** Everything the native UI can ask for. Implemented by MainActivity. */
 interface Actions {
-    fun onTab(tab: Tab)
     fun openSettings()
     fun closeSettings()
     fun finishFirstRun()

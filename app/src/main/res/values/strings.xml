@@ -4,11 +4,7 @@
 <resources>
     <string name="app_name" translatable="false">Instagram</string>
 
-    <!-- Bottom bar -->
-    <string name="tab_messages">Messages</string>
-    <string name="tab_activity">Activity</string>
-    <string name="tab_profile">Profile</string>
-    <string name="unread">Unread</string>
+    <!-- Inbox -->
     <string name="settings">Settings</string>
 
     <!-- First run -->
