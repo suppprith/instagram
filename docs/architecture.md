@@ -40,7 +40,7 @@ No Hilt, no Room, no networking library at the start. Plain constructor injectio
 |  |   document-start script: cage.js + rules.json         |  |
 |  |   WebMessageListener "dms" <--> JsBridge              |  |
 |  +-------------------------------------------------------+  |
-|  | BottomBar: Messages | Activity | Profile            |  |
+|  | Settings gear (inbox only) + banners                  |  |
 |  +-------------------------------------------------------+  |
 +-------------------------------------------------------------+
         |                     |                       |
@@ -79,8 +79,8 @@ app/src/main/
       RulesPatch.kt         patch validator
       PatchRepository.kt    loads bundled rules, fetches and caches remote patch
     ui/
-      AppScreen.kt          WebView + bottom bar + banners + overlays
-      Routes.kt             tab and bottom bar rules per path (pure, unit tested)
+      AppScreen.kt          WebView + settings gear + banners + overlays
+      Routes.kt             where the gear shows, per path (pure, unit tested)
       BottomBar.kt, Onboarding.kt, SettingsSheet.kt, LockSetupScreen.kt, DebugLogScreen.kt
       theme/
     notify/
@@ -145,15 +145,13 @@ Messages are small JSON objects with a `type`:
 | --- | --- | --- |
 | page -> app | `hello` | New document booted; gives the app a reply channel for this page |
 | page -> app | `ready` | Inbox, thread or sign-in rendered; hide splash |
-| page -> app | `route` | Current path, so the bottom bar can highlight and hide itself inside threads |
+| page -> app | `route` | Current path, so the gear and banners show only on the inbox |
 | page -> app | `blocked` | A feed URL was bounced (local counter only) |
 | page -> app | `haptic` | Message sent; short vibration |
 | page -> app | `error` | Cage exception caught, for local debug log |
 | page -> app | `badge` | Unread count from the in-page 30 s poll; drives the unread dot |
-| page -> app | `user` | Signed-in username, read from Instagram's own (hidden) tab bar |
-| app -> page | `navigate` | Bottom bar taps: go to inbox, notifications, own profile |
+| app -> page | `navigate` | Go to a path in-page (notification tap, Instagram account settings) |
 | app -> page | `rules` | Updated rules after a patch download, applied live |
-| app -> page | `scrollTop` | Tapping the active tab |
 | app -> page | `badge` | Poll the unread count now (app returned to the foreground) |
 
 ## The cage
@@ -184,7 +182,7 @@ Messages are small JSON objects with a `type`:
 2. `enforce()`: if `location.pathname` matches a block rule, `location.replace(redirect)`.
 3. Inject a `<style>` with `display:none !important` for every hide selector plus raw `css`.
 4. Rewrite Instagram's own bottom tab bar out of existence (we draw our own natively).
-5. Inside `/reel/<code>/`, stop vertical swipe into the next reel (Konvo does the same).
+5. A shared reel plays alone, in three layers: CSS `touch-action: pan-x` on the page (dialogs excepted) so the browser never starts a vertical scroll; capture-phase listeners that swallow vertical touch and pointer moves from the first pixel, before Instagram's swipe handlers see them; and a route check that snaps back to the sent reel if the path changes to a different reel code.
 6. Report route changes and `ready` over the bridge.
 7. Wrap everything in try/catch; an exception never stops navigation.
 
@@ -197,15 +195,9 @@ Messages are small JSON objects with a `type`:
   - `intent://` and `instagram://` schemes: ignore, or offer to open the Instagram app if a pass is active.
 - `onReceivedError` for the main frame: show the native offline screen with Retry.
 
-### Bottom bar
+### No bottom bar
 
-Native Compose bar, hidden while a thread or full-screen media is open (based on the `route` message):
-
-- **Messages** -> `/direct/inbox/`
-- **Activity** -> `/notifications/` (likes and follow requests, no feed)
-- **Profile** -> own profile, read from the `ds_user_id` cookie
-
-Settings open from a native gear on the Profile tab. The lock has no tab; it appears when the user opens the official Instagram app. Visual spec in [design.md](design.md).
+Messages is the only destination, so there is no tab bar. The only native control on the inbox is a settings gear in the bottom corner, shown when the route is the inbox, the user is signed in and the keyboard is closed. The lock appears when the user opens the official Instagram app. Visual spec in [design.md](design.md).
 
 ### Back button
 

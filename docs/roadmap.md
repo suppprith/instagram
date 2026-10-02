@@ -36,7 +36,7 @@ Read first: [konvo-teardown.md](konvo-teardown.md), [architecture.md](architectu
 3. `cage.js`: history wrapping, popstate, interval safety net, `enforce()`, hide stylesheet, Instagram tab bar removal, reel swipe guard. All wrapped in try/catch.
 4. Document-start injection via `addDocumentStartJavaScript`, origin-restricted, rules inlined. Fallback injection in `onPageStarted`.
 5. Native gate in `doUpdateVisitedHistory`.
-6. Bridge via `addWebMessageListener`: `ready`, `route`, `blocked`, `haptic`, `error` in; `navigate`, `rules` out.
+6. Bridge via `addWebMessageListener`: `hello`, `ready`, `route`, `blocked`, `badge`, `haptic`, `error` in; `navigate`, `rules`, `badge` out.
 7. jsdom test suite for `cage.js`, run in CI.
 8. Verify and extend hide selectors on a real Android device in light, dark, and a non-English language. Prefer icon SVG paths and structure over `aria-label` text.
 
@@ -44,9 +44,9 @@ Read first: [konvo-teardown.md](konvo-teardown.md), [architecture.md](architectu
 
 ## Phase 3: Native frame
 
-1. Bottom bar (Messages, Activity, Profile), hidden in threads, media and with the keyboard open.
-2. Unread dot from the page's badge poll.
-3. Gear on Profile opening the Settings sheet.
+1. No bottom bar: the inbox fills the screen (Activity and Profile were dropped).
+2. Unread count from the page's badge poll, kept as the baseline for background notifications.
+3. Gear in the inbox's bottom corner opening the Settings sheet.
 4. Thread open and close transitions.
 5. Haptic tick on send.
 6. First-run screen and sign-in hand-off.
@@ -111,7 +111,7 @@ Run before every release and after any visible Instagram change.
 - [ ] Send and receive text, photo, video, voice note
 - [ ] React, reply, unsend
 - [ ] Shared post opens in place and back returns to the thread
-- [ ] Shared reel plays; swiping does not move to another reel
+- [ ] Shared reel plays; swiping up or down does nothing, and its comments still scroll
 - [ ] Shared story opens; closing it returns to the thread, not the feed
 - [ ] New message, search, message requests
 - [ ] Group chats

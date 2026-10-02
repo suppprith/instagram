@@ -84,20 +84,19 @@ System font (Roboto on most devices). Four sizes only:
 ## Navigation
 
 ```
-Inbox ─┬─ Thread
-       ├─ Activity
-       └─ Profile ── Settings (sheet)
+Inbox ─┬─ Thread ── shared post, reel or story (one at a time)
+       └─ Settings (sheet, from the gear)
 
 Instagram app (official) ── Lock sheet ── Pass running
 ```
 
-### Bottom bar
+### No bottom bar
 
-- Three icons, no labels: Messages (Direct glyph), Activity (heart), Profile (your profile photo, read from Instagram's page; the account glyph until it loads). The active photo gets an accent ring.
-- 56 dp tall, `bg` color, hairline top divider.
-- Hidden inside a thread, in full-screen media and while the keyboard is open.
-- Tapping the active tab scrolls the inbox to the top.
-- Unread dot on Messages when the badge count is above zero.
+There are no tabs. Messages is the only destination, so the inbox fills the screen; Instagram's own tab bar is hidden too.
+
+- One native control on the inbox: a settings gear in the bottom-right corner, 48 dp, `surface` circle with a hairline border, Instagram's gear glyph.
+- The gear and any banner show only on the inbox, after sign-in, with the keyboard closed.
+- Unread counts reach the user as notifications, not a dot.
 
 ## Screens
 
@@ -131,7 +130,7 @@ No carousel, no quiz, no account creation.
 
 ### 3. Sign in
 
-Instagram's own login page, full screen. Two-factor, challenge and "Save login info" pages pass through untouched. The bottom bar does not appear until the inbox loads.
+Instagram's own login page, full screen. Two-factor, challenge and "Save login info" pages pass through untouched. The settings gear does not appear until the inbox loads.
 
 ### 4. Notifications permission (once, after first sign-in)
 
@@ -152,12 +151,12 @@ Instagram's pages with the feed doorways removed. What the user sees:
 
 - Inbox: your username, notes row, message list, search, new message button.
 - Thread: unchanged. Text, photos, voice notes, reactions, replies, shared posts and reels open in place.
-- Activity: likes, follows, requests.
-- Profile: yours and others'. The grid opens single posts. The Reels and Tagged tabs are gone.
+- A shared reel plays alone. Swiping up or down does nothing; the comment sheet still scrolls. If the page moves to another reel anyway, it snaps back to the one that was sent.
+- Profiles opened from a chat: the grid opens single posts. The Reels and Tagged tabs are gone.
 
-Removed: home, Explore, Reels tab, the Create button, Instagram's bottom tab bar, suggested accounts, "Suggested for you" rows.
+Removed: home, Explore, Reels tab, Activity, your own profile tab, the Create button, Instagram's bottom tab bar, suggested accounts, "Suggested for you" rows.
 
-### 6. Settings (sheet from the gear on Profile)
+### 6. Settings (sheet from the gear on the inbox)
 
 Plain list, grouped, no icons:
 
@@ -245,7 +244,7 @@ Every screen is designed for: loading, empty, error, offline, very long text, 20
 
 ## Accessibility
 
-- TalkBack labels on every native control. Bottom bar icons have content descriptions even though they have no visible labels.
+- TalkBack labels on every native control. The settings gear has a content description even though it has no visible label.
 - Contrast AA for all text tokens on `bg` and `surface`.
 - Layouts reflow at 200% font scale; nothing truncates a primary action.
 - The lock sheet is fully operable with TalkBack and a switch device.
