@@ -30,6 +30,7 @@
   var READY_TIMEOUT_MS = 6000;
   var STYLE_ID = 'dms-cage-style';
   var HIDDEN_ATTR = 'data-dms-hidden';
+  var SINGLE_REEL_CLASS = 'dms-single-reel';
   // Links that make up Instagram's own bottom tab bar. Matching on href is language-proof.
   var NAV_HREFS = ['/', '/explore/', '/reels/', '/direct/inbox/', '/create/select/'];
   var RESERVED_FIRST_SEGMENTS = [
@@ -40,7 +41,8 @@
   var rules = null;
   var blockPatterns = [];
   var lastPath = null;
-  var lastThreadPath = null;
+  var lastThreadPath = readSession('dms.lastThread');
+  var reelHome = null;
   var readySent = false;
   var username = null;
   var avatarSent = null;
@@ -70,6 +72,18 @@
   function go(url) {
     if (typeof window.__dmsGo === 'function') window.__dmsGo(url);
     else location.replace(url);
+  }
+
+  // A bounce reloads the page, so the thread to return to is kept for the tab's lifetime.
+  function readSession(key) {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function writeSession(key, value) {
+    try {
+      if (value) sessionStorage.setItem(key, value);
+      else sessionStorage.removeItem(key);
+    } catch (e) { /* storage may be blocked */ }
   }
 
   // ---------------------------------------------------------------- rules
@@ -115,8 +129,12 @@
         out += selector + '{display:none!important}\n';
       }
     }
-    // Pages render under the native status bar and above the native bottom bar.
     out += 'html,body{overscroll-behavior-y:none}\n';
+    // A shared reel plays alone: no vertical panning into the next one. Comment sheets still scroll.
+    out += 'html.' + SINGLE_REEL_CLASS + ',html.' + SINGLE_REEL_CLASS + ' body,html.' + SINGLE_REEL_CLASS +
+      ' body *{touch-action:pan-x pinch-zoom!important;overscroll-behavior:none!important}\n';
+    out += 'html.' + SINGLE_REEL_CLASS + ' [role="dialog"],html.' + SINGLE_REEL_CLASS +
+      ' [role="dialog"] *{touch-action:auto!important}\n';
     return out + (rules.css || '');
   }
 
@@ -163,13 +181,39 @@
     return true;
   }
 
+  function reelCode(path) {
+    var m = /^\/reels?\/([^/]+)\/?$/.exec(path || '');
+    return m ? m[1] : null;
+  }
+
+  /**
+   * Backstop for a shared reel: if the page moves on to a different reel anyway (Instagram's
+   * feed below a permalink), go back to the one that was sent.
+   */
+  function enforceSingleReel(path) {
+    var code = reelCode(path);
+    var previous = reelCode(lastPath);
+    if (code && previous && code !== previous && reelHome) {
+      post({ type: 'blocked', path: path });
+      go(reelHome);
+      return true;
+    }
+    if (code && !previous) reelHome = path;
+    if (!code) reelHome = null;
+    return false;
+  }
+
   function onRoute() {
     if (enforce()) return;
     var path = location.pathname;
     if (path === lastPath) return;
+    if (enforceSingleReel(path)) return;
     lastPath = path;
     if (isThreadPath(path)) lastThreadPath = path;
     else if (path.indexOf('/direct/inbox') === 0) lastThreadPath = null;
+    writeSession('dms.lastThread', lastThreadPath);
+    var root = document.documentElement;
+    if (root && root.classList) root.classList.toggle(SINGLE_REEL_CLASS, !!reelCode(path));
     post({ type: 'route', path: path });
     scheduleScan();
   }
@@ -321,22 +365,41 @@
     return !!(target && target.closest && target.closest('[role="dialog"]'));
   }
 
+  /**
+   * Vertical gestures on a shared reel are swallowed from their first movement, before the browser
+   * starts scrolling (after which a scroll can no longer be cancelled) and before Instagram's own
+   * swipe handlers see them. Horizontal gestures, taps and the comment sheet are untouched.
+   */
   function installReelGuard() {
     var startX = 0;
     var startY = 0;
+    var swallow = function (e, x, y) {
+      if (!isSingleReel() || inScrollableDialog(e.target)) return;
+      if (Math.abs(y - startY) >= Math.abs(x - startX)) {
+        if (e.cancelable) e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
     window.addEventListener('touchstart', guard('touchstart', function (e) {
       if (!e.touches || !e.touches.length) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     }), { capture: true, passive: true });
     window.addEventListener('touchmove', guard('touchmove', function (e) {
-      if (!isSingleReel() || inScrollableDialog(e.target) || !e.touches || !e.touches.length) return;
-      var dx = Math.abs(e.touches[0].clientX - startX);
-      var dy = Math.abs(e.touches[0].clientY - startY);
-      if (dy > 8 && dy > dx && e.cancelable) e.preventDefault();
+      if (e.touches && e.touches.length === 1) swallow(e, e.touches[0].clientX, e.touches[0].clientY);
+    }), { capture: true, passive: false });
+    window.addEventListener('pointerdown', guard('pointerdown', function (e) {
+      startX = e.clientX;
+      startY = e.clientY;
+    }), { capture: true, passive: true });
+    window.addEventListener('pointermove', guard('pointermove', function (e) {
+      if (e.pointerType !== 'mouse' && e.buttons) swallow(e, e.clientX, e.clientY);
     }), { capture: true, passive: false });
     window.addEventListener('wheel', guard('wheel', function (e) {
-      if (isSingleReel() && !inScrollableDialog(e.target) && e.cancelable) e.preventDefault();
+      if (isSingleReel() && !inScrollableDialog(e.target)) {
+        if (e.cancelable) e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     }), { capture: true, passive: false });
   }
 

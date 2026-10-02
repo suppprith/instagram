@@ -268,20 +268,65 @@ test('Enter on an empty composer or shift+Enter does not buzz', async (t) => {
   assert.equal(page.of('haptic').length, 0);
 });
 
-test('vertical swipes are stopped on a single shared reel but not elsewhere', (t) => {
-  const touch = (w, type, y) => {
-    const event = new w.Event(type, { bubbles: true, cancelable: true });
-    event.touches = [{ clientX: 100, clientY: y }];
-    w.document.body.dispatchEvent(event);
-    return event.defaultPrevented;
-  };
+function touch(w, type, x, y, target) {
+  const event = new w.Event(type, { bubbles: true, cancelable: true });
+  event.touches = [{ clientX: x, clientY: y }];
+  (target || w.document.body).dispatchEvent(event);
+  return event;
+}
+
+test('a shared reel blocks vertical swipes from the first pixel', (t) => {
   const reel = boot(t, '/reel/abc/');
-  touch(reel.w, 'touchstart', 500);
-  assert.equal(touch(reel.w, 'touchmove', 300), true);
+  let instagramSaw = 0;
+  reel.w.document.body.addEventListener('touchmove', () => instagramSaw++);
+  touch(reel.w, 'touchstart', 100, 500);
+  assert.equal(touch(reel.w, 'touchmove', 100, 498).defaultPrevented, true);
+  assert.equal(touch(reel.w, 'touchmove', 100, 300).defaultPrevented, true);
+  assert.equal(instagramSaw, 0, "Instagram's swipe handler never sees the gesture");
+});
+
+test('horizontal swipes and other pages are left alone', (t) => {
+  const reel = boot(t, '/reel/abc/');
+  touch(reel.w, 'touchstart', 100, 500);
+  assert.equal(touch(reel.w, 'touchmove', 300, 505).defaultPrevented, false);
 
   const thread = boot(t, '/direct/t/1/');
-  touch(thread.w, 'touchstart', 500);
-  assert.equal(touch(thread.w, 'touchmove', 300), false);
+  touch(thread.w, 'touchstart', 100, 500);
+  assert.equal(touch(thread.w, 'touchmove', 100, 300).defaultPrevented, false);
+});
+
+test('the comment sheet on a reel still scrolls', (t) => {
+  const html = '<!doctype html><html><head></head><body><div role="dialog"><ul id="c"><li>x</li></ul></div></body></html>';
+  const reel = boot(t, '/reel/abc/', { html });
+  touch(reel.w, 'touchstart', 100, 500);
+  const list = reel.w.document.getElementById('c');
+  assert.equal(touch(reel.w, 'touchmove', 100, 300, list).defaultPrevented, false);
+});
+
+test('a shared reel turns off vertical panning in CSS', (t) => {
+  const reel = boot(t, '/reel/abc/');
+  assert.equal(reel.w.document.documentElement.classList.contains('dms-single-reel'), true);
+  const css = reel.w.document.getElementById('dms-cage-style').textContent;
+  assert.match(css, /html\.dms-single-reel body \*\{touch-action:pan-x pinch-zoom!important/);
+  assert.match(css, /\[role="dialog"\] \*\{touch-action:auto!important\}/);
+
+  reel.w.history.pushState({}, '', '/direct/t/1/');
+  assert.equal(reel.w.document.documentElement.classList.contains('dms-single-reel'), false);
+});
+
+test('moving on to another reel snaps back to the one that was sent', (t) => {
+  const page = boot(t, '/direct/t/7/');
+  page.w.history.pushState({}, '', '/reel/sent/');
+  page.w.history.replaceState({}, '', '/reel/next/');
+  assert.deepEqual(page.gone, ['/reel/sent/']);
+  page.w.history.replaceState({}, '', '/reels/next/');
+  assert.deepEqual(page.gone, ['/reel/sent/', '/direct/t/7/']);
+});
+
+test('after a reload, leaving a reel for the feed still returns to the thread', (t) => {
+  const page = boot(t, '/reel/abc/', { before: (w) => w.sessionStorage.setItem('dms.lastThread', '/direct/t/9/') });
+  page.w.history.pushState({}, '', '/');
+  assert.deepEqual(page.gone, ['/direct/t/9/']);
 });
 
 test('the cage boots only once per document', (t) => {
