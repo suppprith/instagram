@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108 dp adaptive icon layer: Instagram's Direct glyph inside the 66 dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:scaleX="2.4" android:scaleY="2.4" android:translateX="25.2" android:translateY="25.2">
+        <path android:pathData="M12.003,2.001a9.705,9.705 0,1 1,0 19.4a10.876,10.876 0,0 1,-2.895 -0.384a0.798,0.798 0,0 0,-0.533 0.04l-1.984,0.876a0.801,0.801 0,0 1,-1.123 -0.708l-0.054,-1.78a0.806,0.806 0,0 0,-0.27 -0.569a9.49,9.49 0,0 1,-3.14 -7.175a9.65,9.65 0,0 1,10 -9.7z" android:strokeColor="#FF000000" android:strokeWidth="1.739" android:strokeLineJoin="round" android:strokeMiterLimit="10" android:fillColor="#00000000" />
+        <path android:pathData="M17.79,10.132a0.659,0.659 0,0 0,-0.962 -0.873l-2.556,2.05a0.63,0.63 0,0 1,-0.758 0.002L11.06,9.47a1.576,1.576 0,0 0,-2.277 0.42l-2.567,3.98a0.659,0.659 0,0 0,0.961 0.875l2.556,-2.049a0.63,0.63 0,0 1,0.759 -0.002l2.452,1.84a1.576,1.576 0,0 0,2.278 -0.42z" android:fillColor="#FF000000" android:fillType="evenOdd" />
+    </group>
+</vector>

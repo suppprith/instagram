@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Design tokens (docs/design.md). Compose reads the same values from ui/theme/Color.kt. -->
+    <color name="bg">#FFFFFF</color>
+    <color name="surface">#F2F2F2</color>
+    <color name="text">#0A0A0A</color>
+    <color name="accent">#0095F6</color>
+    <color name="icon_background">#0095F6</color>
+</resources>

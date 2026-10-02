@@ -43,7 +43,7 @@ Follows the system light or dark setting. No in-app theme switch.
 | `bg` | `#FFFFFF` | `#000000` | Screen and WebView background |
 | `surface` | `#F2F2F2` | `#121212` | Sheets, list rows |
 | `text` | `#0A0A0A` | `#F5F5F5` | Primary text |
-| `text-muted` | `#737373` | `#A8A8A8` | Secondary text |
+| `text-muted` | `#6B6B6B` | `#A8A8A8` | Secondary text. Instagram's `#737373` fails AA on `surface`, so light mode is one step darker |
 | `divider` | `#DBDBDB` | `#262626` | Hairlines |
 | `accent` | `#0095F6` | `#0095F6` | Primary button, active state. Instagram's own blue, so native and web agree |
 | `danger` | `#ED4956` | `#ED4956` | Destructive actions only |
@@ -66,7 +66,7 @@ System font (Roboto on most devices). Four sizes only:
 - 4 dp grid. Screen padding 20 dp. Gaps 8, 12, 16, 24.
 - Radius: 12 dp for buttons and rows, 20 dp for sheet tops.
 - Hairline dividers (1 px), no shadows, no gradients, no illustrations.
-- Icons: outlined, 24 dp, 1.75 px stroke, to match Instagram's web icons. Filled variant only for the active tab.
+- Icons: Instagram's own web glyphs, redrawn as 24 dp vectors (Direct bubble, Notifications heart, account, gear, close, chevron), so native and web icons are the same. Filled variant only for the active tab.
 - Touch targets at least 48 dp.
 
 ### Motion
@@ -77,27 +77,26 @@ System font (Roboto on most devices). Four sizes only:
 
 ### App icon
 
-- Adaptive icon: a single outlined message bubble, white on the accent blue.
+- Adaptive icon: Instagram's Direct glyph (bubble with the bolt), white on the accent blue. Personal use only; see the roadmap risks.
 - Android 13+ themed (monochrome) icon provided.
 - Label: "Instagram".
 
 ## Navigation
 
 ```
-Inbox ─┬─ Thread
-       ├─ Activity
-       └─ Profile ── Settings (sheet)
+Inbox ─┬─ Thread ── shared post, reel or story (one at a time)
+       └─ Settings (sheet, from the gear)
 
 Instagram app (official) ── Lock sheet ── Pass running
 ```
 
-### Bottom bar
+### No bottom bar
 
-- Three icons, no labels: Messages, Activity (heart), Profile (avatar).
-- 56 dp tall, `bg` color, hairline top divider.
-- Hidden inside a thread, in full-screen media and while the keyboard is open.
-- Tapping the active tab scrolls the inbox to the top.
-- Unread dot on Messages when the badge count is above zero.
+There are no tabs. Messages is the only destination, so the inbox fills the screen; Instagram's own tab bar is hidden too.
+
+- One native control on the inbox: a settings gear in the bottom-right corner, 48 dp, `surface` circle with a hairline border, Instagram's gear glyph.
+- The gear and any banner show only on the inbox, after sign-in, with the keyboard closed.
+- Unread counts reach the user as notifications, not a dot.
 
 ## Screens
 
@@ -131,7 +130,7 @@ No carousel, no quiz, no account creation.
 
 ### 3. Sign in
 
-Instagram's own login page, full screen. Two-factor, challenge and "Save login info" pages pass through untouched. The bottom bar does not appear until the inbox loads.
+Instagram's own login page, full screen. Two-factor, challenge and "Save login info" pages pass through untouched. The settings gear does not appear until the inbox loads.
 
 ### 4. Notifications permission (once, after first sign-in)
 
@@ -152,12 +151,12 @@ Instagram's pages with the feed doorways removed. What the user sees:
 
 - Inbox: your username, notes row, message list, search, new message button.
 - Thread: unchanged. Text, photos, voice notes, reactions, replies, shared posts and reels open in place.
-- Activity: likes, follows, requests.
-- Profile: yours and others'. The grid opens single posts. The Reels and Tagged tabs are gone.
+- A shared reel plays alone. Swiping up or down does nothing; the comment sheet still scrolls. If the page moves to another reel anyway, it snaps back to the one that was sent.
+- Profiles opened from a chat: the grid opens single posts. The Reels and Tagged tabs are gone.
 
-Removed: home, Explore, Reels tab, the Create button, Instagram's bottom tab bar, suggested accounts, "Suggested for you" rows.
+Removed: home, Explore, Reels tab, Activity, your own profile tab, the Create button, Instagram's bottom tab bar, suggested accounts, "Suggested for you" rows.
 
-### 6. Settings (sheet from the gear on Profile)
+### 6. Settings (sheet from the gear on the inbox)
 
 Plain list, grouped, no icons:
 
@@ -245,7 +244,7 @@ Every screen is designed for: loading, empty, error, offline, very long text, 20
 
 ## Accessibility
 
-- TalkBack labels on every native control. Bottom bar icons have content descriptions even though they have no visible labels.
+- TalkBack labels on every native control. The settings gear has a content description even though it has no visible label.
 - Contrast AA for all text tokens on `bg` and `surface`.
 - Layouts reflow at 200% font scale; nothing truncates a primary action.
 - The lock sheet is fully operable with TalkBack and a switch device.

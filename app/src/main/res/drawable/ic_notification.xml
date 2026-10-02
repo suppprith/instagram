@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon: Instagram's Direct glyph, filled, white. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:pathData="M12.003,1.131a10.487,10.487 0,0 0,-10.87 10.57a10.194,10.194 0,0 0,3.412 7.771l0.054,1.78a1.67,1.67 0,0 0,2.342 1.476l1.935,-0.872a11.767,11.767 0,0 0,3.127 0.416a10.488,10.488 0,0 0,0 -20.973zM17.789,10.132l-2.566,3.983a1.577,1.577 0,0 1,-2.278 0.42l-2.452,-1.84a0.63,0.63 0,0 0,-0.759 0.002l-2.556,2.049a0.659,0.659 0,0 1,-0.96 -0.874L8.783,9.89a1.576,1.576 0,0 1,2.277 -0.42l2.453,1.84a0.63,0.63 0,0 0,0.758 -0.003l2.556,-2.05a0.659,0.659 0,0 1,0.961 0.874z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+</vector>

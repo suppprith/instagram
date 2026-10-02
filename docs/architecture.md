@@ -40,7 +40,7 @@ No Hilt, no Room, no networking library at the start. Plain constructor injectio
 |  |   document-start script: cage.js + rules.json         |  |
 |  |   WebMessageListener "dms" <--> JsBridge              |  |
 |  +-------------------------------------------------------+  |
-|  | BottomBar: Messages | Activity | Profile            |  |
+|  | Settings gear (inbox only) + banners                  |  |
 |  +-------------------------------------------------------+  |
 +-------------------------------------------------------------+
         |                     |                       |
@@ -64,31 +64,39 @@ app/src/main/
     cage/cage.js            injected at document start
     cage/rules.json         bundled baseline rules
   java/com/suppprith/dms/
-    MainActivity.kt
+    App.kt                  AppGraph: plain constructor injection
+    MainActivity.kt         splash, permissions, intents, implements ui/Actions
     web/
-      CageWebView.kt        WebView factory + settings
+      WebHost.kt            owns the WebView: settings, injection, gate, navigation, session
       CageClient.kt         WebViewClient: native URL gate, external links, errors
-      CageChromeClient.kt   file chooser, mic/camera permission, popups, progress
+      CageChromeClient.kt   file chooser, mic permission, full-screen video, popups
       JsBridge.kt           WebMessageListener, typed messages in and out
-      UserAgent.kt          builds a Chrome-mobile UA without the "wv" token
+      UrlPolicy.kt          in-app vs Custom Tab vs ignore (pure, unit tested)
+      UserAgent*.kt         Chrome-mobile UA without the "wv" token
+      FilePicker.kt, Downloads.kt, Links.kt
     cage/
       Rules.kt              data classes + matcher shared by native gate
+      RulesPatch.kt         patch validator
       PatchRepository.kt    loads bundled rules, fetches and caches remote patch
     ui/
-      BottomBar.kt
-      Onboarding*.kt
-      Settings.kt
-      OfflineScreen.kt
+      AppScreen.kt          WebView + settings gear + banners + overlays
+      Routes.kt             where the gear shows, per path (pure, unit tested)
+      BottomBar.kt, Onboarding.kt, SettingsSheet.kt, LockSetupScreen.kt, DebugLogScreen.kt
       theme/
     notify/
       UnreadWorker.kt
       Notifications.kt      channels, posting, tap intent
+      BadgeCount.kt         endpoint, parsing, notify rule (pure, unit tested)
     lock/
       PassPolicy.kt         single source of truth for pass rules
+      PassState.kt          day rollover, expiry, clock changes (pure, unit tested)
       PassRepository.kt     DataStore-backed state
       LockAccessibilityService.kt
-      LockActivity.kt       "Why do you want to unlock Instagram?"
-      RelockScheduler.kt    AlarmManager / WorkManager for pass expiry
+      LockActivity.kt       "What do you need Instagram for?"
+      RelockScheduler.kt    exact alarm + service timer for pass expiry
+      RelockReceiver.kt     alarm and "Lock now"
+    update/                 GitHub Releases check
+    util/                   settings store, debug log, HTTP
   res/xml/
     lock_accessibility_service.xml
 ```
@@ -135,13 +143,16 @@ Messages are small JSON objects with a `type`:
 
 | Direction | Type | Purpose |
 | --- | --- | --- |
-| page -> app | `ready` | Inbox or thread rendered; hide splash |
-| page -> app | `route` | Current path, so the bottom bar can highlight and hide itself inside threads |
+| page -> app | `hello` | New document booted; gives the app a reply channel for this page |
+| page -> app | `ready` | Inbox, thread or sign-in rendered; hide splash |
+| page -> app | `route` | Current path, so the gear and banners show only on the inbox |
 | page -> app | `blocked` | A feed URL was bounced (local counter only) |
 | page -> app | `haptic` | Message sent; short vibration |
 | page -> app | `error` | Cage exception caught, for local debug log |
-| app -> page | `navigate` | Bottom bar taps: go to inbox, notifications, own profile |
+| page -> app | `badge` | Unread count from the in-page 30 s poll; drives the unread dot |
+| app -> page | `navigate` | Go to a path in-page (notification tap, Instagram account settings) |
 | app -> page | `rules` | Updated rules after a patch download, applied live |
+| app -> page | `badge` | Poll the unread count now (app returned to the foreground) |
 
 ## The cage
 
@@ -171,7 +182,7 @@ Messages are small JSON objects with a `type`:
 2. `enforce()`: if `location.pathname` matches a block rule, `location.replace(redirect)`.
 3. Inject a `<style>` with `display:none !important` for every hide selector plus raw `css`.
 4. Rewrite Instagram's own bottom tab bar out of existence (we draw our own natively).
-5. Inside `/reel/<code>/`, stop vertical swipe into the next reel (Konvo does the same).
+5. A shared reel plays alone, in three layers: CSS `touch-action: pan-x` on the page (dialogs excepted) so the browser never starts a vertical scroll; capture-phase listeners that swallow vertical touch and pointer moves from the first pixel, before Instagram's swipe handlers see them; and a route check that snaps back to the sent reel if the path changes to a different reel code.
 6. Report route changes and `ready` over the bridge.
 7. Wrap everything in try/catch; an exception never stops navigation.
 
@@ -184,19 +195,13 @@ Messages are small JSON objects with a `type`:
   - `intent://` and `instagram://` schemes: ignore, or offer to open the Instagram app if a pass is active.
 - `onReceivedError` for the main frame: show the native offline screen with Retry.
 
-### Bottom bar
+### No bottom bar
 
-Native Compose bar, hidden while a thread or full-screen media is open (based on the `route` message):
-
-- **Messages** -> `/direct/inbox/`
-- **Activity** -> `/notifications/` (likes and follow requests, no feed)
-- **Profile** -> own profile, read from the `ds_user_id` cookie
-
-Settings open from a native gear on the Profile tab. The lock has no tab; it appears when the user opens the official Instagram app. Visual spec in [design.md](design.md).
+Messages is the only destination, so there is no tab bar. The only native control on the inbox is a settings gear in the bottom corner, shown when the route is the inbox, the user is signed in and the keyboard is closed. The lock appears when the user opens the official Instagram app. Visual spec in [design.md](design.md).
 
 ### Back button
 
-`OnBackPressedCallback`: if `webView.canGoBack()` and the current path is not the inbox, `goBack()`; at the inbox, finish the activity. Never let back history walk into a blocked page (the gate would bounce it, but skipping it avoids a flicker).
+`OnBackPressedCallback`: leave full-screen video first; then, if the current path is not the inbox, go back to the nearest history entry that is not a blocked page (skipping them avoids a bounce flicker), or load the inbox if there is none. At the inbox, back goes to the system, which finishes the activity on Android 11 and older and moves the task to the back on 12 and newer, so reopening is instant.
 
 ## Media and permissions
 
@@ -204,7 +209,7 @@ Settings open from a native gear on the Profile tab. The lock has no tab; it app
 | --- | --- |
 | Send photos and videos | `WebChromeClient.onShowFileChooser` -> `ActivityResultContracts.GetMultipleContents`, plus a camera capture option |
 | Voice notes | `onPermissionRequest` grants `RESOURCE_AUDIO_CAPTURE` after the app holds `RECORD_AUDIO` |
-| Camera in page | `RESOURCE_VIDEO_CAPTURE` with `CAMERA` |
+| Camera | The file chooser offers the camera app (`ACTION_IMAGE_CAPTURE` / `ACTION_VIDEO_CAPTURE` into a cache file shared with `FileProvider`), so the app needs no `CAMERA` permission. In-page `RESOURCE_VIDEO_CAPTURE` is denied; Instagram's mobile web DMs do not use it |
 | Save media | `setDownloadListener` -> `DownloadManager` (only for user-initiated downloads) |
 | Popups (`window.open`) | `onCreateWindow` -> load in a dialog WebView, or route to Custom Tabs if off-site |
 | Full-screen video | `onShowCustomView` / `onHideCustomView` |
@@ -237,7 +242,9 @@ The user can lock the official Instagram app (`com.instagram.android`) so the on
 
 ### Detection
 
-`LockAccessibilityService`, configured for `typeWindowStateChanged` events only, with `packageNames="com.instagram.android"` so it receives nothing about any other app.
+`LockAccessibilityService`, configured for `typeWindowStateChanged` events only, with `canRetrieveWindowContent="false"`. It never sees what is on screen.
+
+It does not set `packageNames`. With the filter, the service would only hear about Instagram, so it could not tell when the user has left Instagram, and a pass ending would send the user home from whatever app they had switched to. Instead it compares each event's package name with `com.instagram.android` and keeps a single boolean, "Instagram is in front". Nothing about other apps is stored or logged. System UI and keyboard windows are ignored because they sit on top of the current app.
 
 When Instagram comes to the foreground and no pass is active:
 
@@ -278,6 +285,7 @@ The user can always disable the lock in the app's settings or by turning off the
 
 - Patch file: a static `rules-patch.json` served from GitHub Pages or a raw file in a public repo.
 - `PatchRepository` fetches it on app start and at most once per hour, validates it (schema version, regexes compile, size under 64 KB), caches the last good copy in app storage.
+- Patch format: `{ "schema": 1, "block": [...], "hide": [...], "css": "...", "note": "..." }`. Any other key (for example `unblock` or `redirect`) rejects the whole patch. Block rules must be anchored at `^/` and must not match the inbox, a thread, or the sign-in and challenge pages, so a bad patch can never lock the user out.
 - Effective rules = bundled rules + cached patch (additive only: more blocks, more hides, more CSS; a patch can never unblock a baseline rule).
 - New rules are pushed into a running page with the `rules` bridge message and used for the next document-start injection.
 - Data only. Google Play does allow JavaScript inside a WebView to be fetched remotely, but keeping it data-only keeps review and security simple.

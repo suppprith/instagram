@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Instagram's Settings gear -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:pathData="M20.635,12a8.635,8.635 0,1 1,-17.27 0a8.635,8.635 0,1 1,17.27 0z" android:strokeColor="#FF000000" android:strokeLineJoin="round" android:fillColor="#00000000" android:strokeWidth="2" android:strokeMiterLimit="10" />
+    <path android:pathData="M14.232,3.656a1.269,1.269 0,0 1,-0.796 -0.66L12.93,2h-1.86l-0.505,0.996a1.269,1.269 0,0 1,-0.796 0.66m-0.001,16.688a1.269,1.269 0,0 1,0.796 0.66l0.505,0.996h1.862l0.505,-0.996a1.269,1.269 0,0 1,0.796 -0.66M3.656,9.768a1.269,1.269 0,0 1,-0.66 0.796L2,11.07v1.862l0.996,0.505a1.269,1.269 0,0 1,0.66 0.796m16.688,-0.001a1.269,1.269 0,0 1,0.66 -0.796L22,12.93v-1.86l-0.996,-0.505a1.269,1.269 0,0 1,-0.66 -0.796M7.678,4.522a1.269,1.269 0,0 1,-1.03 0.096l-1.06,-0.348L4.27,5.587l0.348,1.062a1.269,1.269 0,0 1,-0.096 1.03m11.8,11.799a1.269,1.269 0,0 1,1.03 -0.096l1.06,0.348l1.318,-1.317l-0.348,-1.062a1.269,1.269 0,0 1,0.096 -1.03m-14.956,0.001a1.269,1.269 0,0 1,0.096 1.03l-0.348,1.06l1.317,1.318l1.062,-0.348a1.269,1.269 0,0 1,1.03 0.096m11.799,-11.8a1.269,1.269 0,0 1,-0.096 -1.03l0.348,-1.06l-1.317,-1.318l-1.062,0.348a1.269,1.269 0,0 1,-1.03 -0.096" android:strokeColor="#FF000000" android:strokeLineJoin="round" android:fillColor="#00000000" android:strokeWidth="2" />
+</vector>

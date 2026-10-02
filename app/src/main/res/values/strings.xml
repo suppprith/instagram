@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every string follows the copy rules in docs/design.md: literal, short, sentence case,
+     no exclamation marks, no emoji, no em dashes, buttons are verbs. -->
+<resources>
+    <string name="app_name" translatable="false">Instagram</string>
+
+    <!-- Inbox -->
+    <string name="settings">Settings</string>
+
+    <!-- First run -->
+    <string name="first_run_title">Instagram messages.\nNothing else.</string>
+    <string name="first_run_body">No feed, Reels or Explore.</string>
+    <string name="first_run_sign_in">Sign in</string>
+    <string name="first_run_caption">You sign in on Instagram\'s own page. Your password never touches this app.</string>
+
+    <!-- Notifications prompt -->
+    <string name="notify_title">Get notified about new messages</string>
+    <string name="notify_body">Shows how many conversations are unread. Never the message text.</string>
+    <string name="allow">Allow</string>
+    <string name="not_now">Not now</string>
+
+    <!-- Offline -->
+    <string name="offline_title">No connection.</string>
+    <string name="retry">Retry</string>
+
+    <!-- Settings -->
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_lock">Lock the Instagram app</string>
+    <string name="settings_account">Instagram account</string>
+    <string name="settings_sign_out">Sign out of this device</string>
+    <string name="settings_check_updates">Check for updates</string>
+    <string name="settings_update_available">Update available, v%1$s</string>
+    <string name="settings_up_to_date">Up to date</string>
+    <string name="settings_debug_log">Debug log</string>
+    <string name="settings_battery">Battery settings</string>
+    <string name="settings_battery_caption">Notifications can arrive late while battery optimization is on.</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="checking">Checking</string>
+    <string name="sign_out_title">Sign out of this device?</string>
+    <string name="sign_out_body">This clears the session on this phone. Your Instagram account stays as it is.</string>
+    <string name="sign_out">Sign out</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Banners -->
+    <string name="banner_update">Update available, v%1$s</string>
+    <string name="download">Download</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="banner_lock_off">The lock is off.</string>
+    <string name="turn_on">Turn on</string>
+
+    <!-- Lock setup -->
+    <string name="lock_setup_title">Lock the Instagram app</string>
+    <string name="lock_setup_body">The Instagram app opens only with a short pass. Use it to post or call.</string>
+    <string name="lock_step_restricted">Allow restricted settings</string>
+    <string name="lock_step_restricted_help">Open App info, tap the menu at the top, then Allow restricted settings.</string>
+    <string name="lock_step_service">Turn on the lock service</string>
+    <string name="lock_step_passes">Passes per day</string>
+    <string name="lock_not_installed">The Instagram app is not installed on this phone.</string>
+    <string name="done">Done</string>
+    <string name="lock_turn_off">Turn off the lock</string>
+    <string name="mock_app_info">App info</string>
+    <string name="mock_allow_restricted">Allow restricted settings</string>
+    <string name="mock_uninstall">Uninstall updates</string>
+
+    <!-- Lock sheet -->
+    <string name="lock_title">What do you need Instagram for?</string>
+    <string name="lock_open_for">Open for %1$d min</string>
+    <string name="lock_left_today">%1$d left today</string>
+    <string name="lock_go_back">Go back</string>
+    <string name="lock_none_left">No passes left today. Resets at midnight.</string>
+    <string name="lock_open_messages">Open messages</string>
+
+    <!-- Lock service (system accessibility settings) -->
+    <string name="lock_service_label">Instagram lock</string>
+    <string name="lock_service_summary">Shows a lock when the Instagram app opens.</string>
+    <string name="lock_service_description">Shows a lock screen when the Instagram app opens without a pass. It only reads which app is in front. It never reads what is on the screen.</string>
+
+    <!-- Notifications -->
+    <string name="channel_messages">Messages</string>
+    <string name="channel_messages_description">How many conversations are unread. Never the message text.</string>
+    <string name="channel_pass">Pass running</string>
+    <string name="channel_pass_description">Countdown while the Instagram app is open with a pass.</string>
+    <string name="pass_running">Instagram open</string>
+    <string name="lock_now">Lock now</string>
+
+    <!-- Debug log -->
+    <string name="debug_log_title">Debug log</string>
+    <string name="debug_log_empty">Nothing logged yet.</string>
+    <string name="export">Export</string>
+    <string name="clear">Clear</string>
+    <string name="back">Back</string>
+
+    <!-- Toasts -->
+    <string name="cannot_save_file">This file cannot be saved.</string>
+    <string name="downloading">Downloading</string>
+    <string name="no_app_to_open">No app can open this.</string>
+    <string name="shared_text_copied">Copied. Paste it into a chat.</string>
+</resources>

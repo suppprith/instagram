@@ -36,7 +36,7 @@ Read first: [konvo-teardown.md](konvo-teardown.md), [architecture.md](architectu
 3. `cage.js`: history wrapping, popstate, interval safety net, `enforce()`, hide stylesheet, Instagram tab bar removal, reel swipe guard. All wrapped in try/catch.
 4. Document-start injection via `addDocumentStartJavaScript`, origin-restricted, rules inlined. Fallback injection in `onPageStarted`.
 5. Native gate in `doUpdateVisitedHistory`.
-6. Bridge via `addWebMessageListener`: `ready`, `route`, `blocked`, `haptic`, `error` in; `navigate`, `rules` out.
+6. Bridge via `addWebMessageListener`: `hello`, `ready`, `route`, `blocked`, `badge`, `haptic`, `error` in; `navigate`, `rules`, `badge` out.
 7. jsdom test suite for `cage.js`, run in CI.
 8. Verify and extend hide selectors on a real Android device in light, dark, and a non-English language. Prefer icon SVG paths and structure over `aria-label` text.
 
@@ -44,9 +44,9 @@ Read first: [konvo-teardown.md](konvo-teardown.md), [architecture.md](architectu
 
 ## Phase 3: Native frame
 
-1. Bottom bar (Messages, Activity, Profile), hidden in threads, media and with the keyboard open.
-2. Unread dot from the page's badge poll.
-3. Gear on Profile opening the Settings sheet.
+1. No bottom bar: the inbox fills the screen (Activity and Profile were dropped).
+2. Unread count from the page's badge poll, kept as the baseline for background notifications.
+3. Gear in the inbox's bottom corner opening the Settings sheet.
 4. Thread open and close transitions.
 5. Haptic tick on send.
 6. First-run screen and sign-in hand-off.
@@ -111,7 +111,7 @@ Run before every release and after any visible Instagram change.
 - [ ] Send and receive text, photo, video, voice note
 - [ ] React, reply, unsend
 - [ ] Shared post opens in place and back returns to the thread
-- [ ] Shared reel plays; swiping does not move to another reel
+- [ ] Shared reel plays; swiping up or down does nothing, and its comments still scroll
 - [ ] Shared story opens; closing it returns to the thread, not the feed
 - [ ] New message, search, message requests
 - [ ] Group chats
@@ -149,12 +149,14 @@ Run before every release and after any visible Instagram change.
 
 ## Open decisions
 
-| Decision | Options | Needed by |
-| --- | --- | --- |
-| Pass policy default | 2 × 5 min (Konvo v1.9.0), or 5 + 1 min (earlier Konvo build) | Phase 6 |
-| Patch file host | GitHub Pages on a small public repo, or raw file in a public gist | Phase 4 |
-| Update channel | Public releases repo (auto-update works), or private repo with manual installs | Phase 7 |
-| Icon | Own bubble mark (planned), or something closer to Instagram's glyph for personal use | Phase 0 |
+The build ships with the default in the last column; each is one setting to change.
+
+| Decision | Options | Needed by | Current default |
+| --- | --- | --- | --- |
+| Pass policy default | 2 × 5 min (Konvo v1.9.0), or 5 + 1 min (earlier Konvo build) | Phase 6 | 2 × 5 min (`PassPolicy.Default`); the user can pick 1 × 5, 3 × 5, 5 + 1 or 2 × 10 in lock setup |
+| Patch file host | GitHub Pages on a small public repo, or raw file in a public gist | Phase 4 | `patch/rules-patch.json` in this repo via raw GitHub (`dms.patchUrl` in `gradle.properties`). Works only once the repo, or a copy of the file, is public; until then the fetch fails silently and the bundled rules apply |
+| Update channel | Public releases repo (auto-update works), or private repo with manual installs | Phase 7 | GitHub Releases API on this repo (`dms.releasesRepo`). A private repo returns 404 and the app shows no update |
+| Icon | Own bubble mark (planned), or something closer to Instagram's glyph for personal use | Phase 0 | Instagram's Direct glyph, and Instagram's glyphs throughout the native frame |
 
 ## Risks
 
