@@ -19,6 +19,11 @@ class CageClient(private val host: WebHost) : WebViewClient() {
         host.onPageStarted(url)
     }
 
+    /** First paint of the new page: Instagram's server-rendered shell, long before its scripts finish. */
+    override fun onPageCommitVisible(view: WebView, url: String?) {
+        host.onPageVisible()
+    }
+
     override fun onPageFinished(view: WebView, url: String?) {
         host.onPageFinished(url)
     }

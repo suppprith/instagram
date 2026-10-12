@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity(), Actions {
         filePicker = FilePicker(this)
         host = WebHost(this, state)
 
-        // Screen 1: icon on the theme background until the inbox (or sign-in) renders, at most 8 s.
+        // Screen 1: icon on the theme background until the page first paints, at most 2.5 s.
         splash.setKeepOnScreenCondition { keepSplash() }
         splash.setOnExitAnimationListener { provider ->
             if (!ValueAnimator.areAnimatorsEnabled()) {
@@ -121,7 +121,9 @@ class MainActivity : ComponentActivity(), Actions {
             snapshotFlow { state.signedIn }.filter { it }.first()
             if (!graph.settings.current().firstRunDone) graph.settings.setFirstRunDone()
         }
+        // Network calls that are not the page wait until it shows, so they never compete with it.
         lifecycleScope.launch {
+            snapshotFlow { state.ready }.filter { it }.first()
             state.update = graph.updates.check()
         }
         registerNetworkCallback()
@@ -390,6 +392,6 @@ class MainActivity : ComponentActivity(), Actions {
 
     companion object {
         const val EXTRA_OPEN_INBOX = "com.suppprith.dms.extra.OPEN_INBOX"
-        private const val SPLASH_TIMEOUT_MS = 8_000L
+        private const val SPLASH_TIMEOUT_MS = 2_500L
     }
 }

@@ -27,7 +27,7 @@
   var BADGE_URL = '/api/v1/direct_v2/get_badge_count/?no_raven=1';
   var BADGE_INTERVAL_MS = 30000;
   var ENFORCE_INTERVAL_MS = 800;
-  var READY_TIMEOUT_MS = 6000;
+  var READY_TIMEOUT_MS = 2000;
   var STYLE_ID = 'dms-cage-style';
   var HIDDEN_ATTR = 'data-dms-hidden';
   var SINGLE_REEL_CLASS = 'dms-single-reel';
