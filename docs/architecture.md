@@ -106,7 +106,7 @@ app/src/main/
 ### Loading
 
 - Start URL: `https://www.instagram.com/direct/inbox/`.
-- Show a native splash (app logo on the theme background) until the inbox has rendered, detected by the bridge sending `ready` once the inbox list or composer exists. Timeout after 8 s and show whatever is there.
+- Show a native splash (app logo on the theme background) until the page first paints (`onPageCommitVisible`), or the bridge sends `ready`, whichever comes first. Timeout after 2.5 s and show whatever is there.
 - Set the WebView background colour to match the theme to avoid a white flash in dark mode.
 
 ### Settings

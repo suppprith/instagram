@@ -18,9 +18,17 @@ class DebugLog(context: Context) {
     private val file = File(context.filesDir, "debug.log")
     private val lock = Any()
     private val format = SimpleDateFormat("MM-dd HH:mm:ss", Locale.US)
-    private val _lines = MutableStateFlow(readFile())
+    private val _lines = MutableStateFlow(emptyList<String>())
 
     val lines: StateFlow<List<String>> = _lines.asStateFlow()
+
+    init {
+        // Read the old log off the main thread so it never delays startup. The file already holds
+        // any line added meanwhile, since add() writes under the same lock.
+        Thread {
+            synchronized(lock) { _lines.value = readFile().ifEmpty { _lines.value } }
+        }.start()
+    }
 
     fun i(tag: String, message: String) = add("I", tag, message)
 

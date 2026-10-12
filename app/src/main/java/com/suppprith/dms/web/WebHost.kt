@@ -154,6 +154,11 @@ class WebHost(private val activity: MainActivity, private val state: UiState) {
         }
     }
 
+    /** Lift the splash at first paint; Instagram shows its own loading state from there. */
+    fun onPageVisible() {
+        if (!state.ready) markReady()
+    }
+
     fun onPageFinished(url: String?) {
         setRoute(url)
         refreshSignedIn()

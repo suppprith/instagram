@@ -102,7 +102,7 @@ There are no tabs. Messages is the only destination, so the inbox fills the scre
 
 ### 1. Launch
 
-App icon centred on `bg`. No text, no spinner for the first 600 ms. Fades into the inbox the moment it is ready. After 8 s, show the page as it is.
+App icon centred on `bg`. No text, no spinner for the first 600 ms. Fades into the page the moment it first paints. After 2.5 s, show the page as it is.
 
 ### 2. First run (one screen)
 
